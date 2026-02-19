@@ -1,0 +1,60 @@
+In this exercise, we will use the R package BiDAG1
+to learn Bayesian networks from protein data.
+Download the data here. The data consists of the measurements of 11 phosphorylated proteins
+and phospholipids derived from primary immune system cells, subjected to both general and specific
+molecular interventions. (Hint: read the help files of the package and use default parameters
+unless otherwise stated.)
+
+(a) First, run set.seed(42) for reproducibility. Read in the data in R. Report the number of
+variables n and the number of observations N. Visualize the data in a pair plot using the
+ggpairs function in the R package GGally. Randomly split the data into 80% training data
+and 20% test data. Initialize the parameters using the function BiDAG::scoreparameters
+with the training data and the Bayesian Gaussian equivalent (BGe) score.
+[Note: The BGe score is a fully-decomposable marginal likelihood function P(D | G) for
+scoring Bayesian networks. The main underlying assumption is that the data is normally
+distributed with N (µ, W^-1). The precision matrix W follows a Wishart prior Wn(T^-1, αw),
+where αw > n − 1 is the degrees of freedom and T is the positive definite parametric matrix.
+The mean vector µ follows a normal prior N (ν, Wα_µ) with α_µ > 0.]
+
+Run install.packages("BiDAG") in the R console. Then load the package by running library(BiDAG). You
+may need to install the missing packages graph, RBGL, and Rgraphviz from Bioconductor.
+```{r}
+set.seed(42)
+data <- read.csv("hw1/2005_sachs_2_cd3cd28icam2_log_std.csv")
+n <- ncol(data)
+N <- nrow(data)
+cat("Number of variables (n):", n, "\n")
+cat("Number of observations (N):", N, "\n")
+
+library(GGally)
+ggpairs(data)
+
+train_indices <- sample(seq_len(N), size = floor(0.8 * N))
+train_data <- data[train_indices, ]
+test_data <- data[-train_indices, ]
+
+library(BiDAG)
+myScore <- scoreparameters(score = "bge", data = train_data)
+print(myScore)
+```
+
+(b) Learn a Bayesian network using the BiDAG::iterativeMCMC function. Plot the directed
+acyclic graph (DAG). Evaluate the log BGe score of the test data against the estimated DAG
+using the function BiDAG::scoreagainstDAG.
+
+```{r}
+library(BiDAG)
+library(Rgraphviz)
+library(graph)
+
+myDAG <- iterativeMCMC(myScore)
+
+g <- as(myDAG$DAG, "graphNEL")
+plot(g) 
+
+testScore <- scoreparameters(score = "bge", data = test_data)
+
+test_log_score <- sum(scoreagainstDAG(scorepar = testScore, incidence = myDAG$DAG))
+
+cat("Log BGe score of test data against estimated DAG:", test_log_score, "\n")
+```
