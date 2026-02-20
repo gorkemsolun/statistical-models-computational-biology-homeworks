@@ -2,11 +2,14 @@
 editor: 
   markdown: 
     wrap: 72
+editor_options: 
+  chunk_output_type: inline
+
+title: "Homework 1: Bayesian Networks and Gene Regulation"
+author: "Bernhard Buss, Görkem Solun and Carlo Rossetto"
+format: pdf
+device: "cairo_pdf"
 ---
-
-# Homework 1: Bayesian networks and gene regulation
-
-#### by Bernhard Buss, Görkem Solun and Carlo Rossetto
 
 ### Problem 1: Conditional independence and Bayesian networks
 
@@ -40,7 +43,8 @@ conditioning on C here, A and B remain independent.
 $$P(A,B,C) = P(A)P(B)P(C|A,B)$$ which is substituted in the following
 $$P(A,B|C) = \frac{P(A,B,C)}{P(C)} = \frac{P(A)P(B)P(C|A,B)}{P(C)} \not= P(A|C)P(B|C) \implies A\not⊥B\ | \ C$$
 While
-$$P(A,B) = \sum_{c}P(A,B,c) =\sum_{c}P(A)P(B)P(C|A,B) =P(A)P(B)\sum_{c}P(C|A,B) $$ $$ = P(A)P(B) \cdot 1  =P(A)P(B) \implies A⊥B$$
+$$P(A,B) = \sum_{c}P(A,B,c) =\sum_{c}P(A)P(B)P(C|A,B) =P(A)P(B)\sum_{c}P(C|A,B) $$
+$$ = P(A)P(B) \cdot 1  =P(A)P(B) \implies A⊥B$$
 
 ### Problem 2: Markov blanket
 
@@ -54,7 +58,8 @@ conditional probability $P(D|A,B,C,E,F,G)$ is the same as $P(D|MB(D))$.
 2\) Markov blanket of D, $MB(D)$, is composed of the parents, children
 and co-parents of D. $$MB(D) = \{A,B,C,E,G\}$$
 
-$$P(D|A,B,C,E,F,G) = \frac{P(A,B,C,D,E,F,G)}{P(A,B,C,E,F,G)} = \frac{P(A,B,C,D,E,F,G)}{\sum_{d} P(A,B,C,d,E,F,G)} = \frac{P(A)P(B)P(C|D)P(D|A,B)P(E)P(E|F)P(G|D,E)}{\sum_{d} P(A)P(B)P(C|d)P(d|A,B)P(E)P(E|F)P(G|d,E)}$$
+$$P(D|A,B,C,E,F,G) = \frac{P(A,B,C,D,E,F,G)}{P(A,B,C,E,F,G)} = \frac{P(A,B,C,D,E,F,G)}{\sum_{d} P(A,B,C,d,E,F,G)} = $$
+$$ = \frac{P(A)P(B)P(C|D)P(D|A,B)P(E)P(E|F)P(G|D,E)}{\sum_{d} P(A)P(B)P(C|d)P(d|A,B)P(E)P(E|F)P(G|d,E)}$$
 
 Since the bottom sum is over d, terms not containing d can be factored
 out.
@@ -96,21 +101,32 @@ running library(BiDAG). You may need to install the missing packages
 graph, RBGL, and Rgraphviz from Bioconductor.
 
 ```{r}
+#| fig-width: 16
+#| fig-height: 14
+#| out-width: "100%"
+#| message: false
+
+
 set.seed(42)
-data <- read.csv("hw1/2005_sachs_2_cd3cd28icam2_log_std.csv")
+data <- read.csv("2005_sachs_2_cd3cd28icam2_log_std.csv")
 n <- ncol(data)
 N <- nrow(data)
 cat("Number of variables (n):", n, "\n")
 cat("Number of observations (N):", N, "\n")
 
+suppressPackageStartupMessages(library(GGally))
+
 library(GGally)
 ggpairs(data)
 
+```
+
+```{r}
 train_indices <- sample(seq_len(N), size = floor(0.8 * N))
 train_data <- data[train_indices, ]
 test_data <- data[-train_indices, ]
 
-library(BiDAG)
+suppressPackageStartupMessages(library(BiDAG))
 myScore <- scoreparameters(score = "bge", data = train_data)
 print(myScore)
 ```
@@ -121,9 +137,9 @@ print(myScore)
     BiDAG::scoreagainstDAG.
 
 ```{r}
-library(BiDAG)
-library(Rgraphviz)
-library(graph)
+suppressPackageStartupMessages(library(BiDAG))
+suppressPackageStartupMessages(library(Rgraphviz))
+suppressPackageStartupMessages(library(graph))
 
 myDAG <- iterativeMCMC(myScore)
 
@@ -136,3 +152,13 @@ test_log_score <- sum(scoreagainstDAG(scorepar = testScore, incidence = myDAG$DA
 
 cat("Log BGe score of test data against estimated DAG:", test_log_score, "\n")
 ```
+
+(c) Assume you receive new data where only phosphorylated proteins are
+    measured but the phospholipids, PIP2 and PIP3, are not. You would
+    like to impute PIP2 and PIP3 from (a subset of) the other variables.
+    According to the Bayesian Network you learned in (b), which subset
+    should you choose and why?
+
+    For PIP2 {plgc} because PIP2 is only dependent on plgc. For PIP3
+    subset {plgc,PIP2} because PIP3 is dependent on plgc and PIP2. In
+    total {plgc,PIP2,PIP3}.
