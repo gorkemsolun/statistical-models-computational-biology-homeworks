@@ -1,23 +1,87 @@
-In this exercise, we will use the R package BiDAG1
-to learn Bayesian networks from protein data.
-Download the data here. The data consists of the measurements of 11 phosphorylated proteins
-and phospholipids derived from primary immune system cells, subjected to both general and specific
-molecular interventions. (Hint: read the help files of the package and use default parameters
-unless otherwise stated.)
+---
+editor: 
+  markdown: 
+    wrap: 72
+---
 
-(a) First, run set.seed(42) for reproducibility. Read in the data in R. Report the number of
-variables n and the number of observations N. Visualize the data in a pair plot using the
-ggpairs function in the R package GGally. Randomly split the data into 80% training data
-and 20% test data. Initialize the parameters using the function BiDAG::scoreparameters
-with the training data and the Bayesian Gaussian equivalent (BGe) score.
-[Note: The BGe score is a fully-decomposable marginal likelihood function P(D | G) for
-scoring Bayesian networks. The main underlying assumption is that the data is normally
-distributed with N (µ, W^-1). The precision matrix W follows a Wishart prior Wn(T^-1, αw),
-where αw > n − 1 is the degrees of freedom and T is the positive definite parametric matrix.
-The mean vector µ follows a normal prior N (ν, Wα_µ) with α_µ > 0.]
+# Homework 1: Bayesian networks and gene regulation
 
-Run install.packages("BiDAG") in the R console. Then load the package by running library(BiDAG). You
-may need to install the missing packages graph, RBGL, and Rgraphviz from Bioconductor.
+#### by Bernhard Buss, Görkem Solun and Carlo Rossetto
+
+### Problem 1: Conditional independence and Bayesian networks
+
+Consider the following graphical structures, corresponding to
+(different) Bayesian networks. For which network does the statement
+$A⊥B\ | \ C$ hold? For which does the statement $A ⊥ B$ hold? Prove your
+answers by the laws of probability.
+
+![](images/BN%20SMCP.png){fig-align="center"}
+
+1a) $A⊥B\ | \ C$ holds, $A⊥B$ does not. $$P(A,B,C) = P(A|C)P(B|C)P(C)$$
+which is substituted in the following
+$$P(A,B|C) = \frac{P(A,B,C)}{P(C)} = \frac{P(A|C)P(B|C)P(C)}{P(C)} = P(A|C)P(B|C) \implies A⊥B\ | \ C$$
+However, since C is not null ($\varnothing$), they are not marginally
+independent, meaning $A\not⊥B$.
+
+1b) $A⊥B\ | \ C$ does not hold, $A⊥B$ does.
+
+$$P(A,B,C) = P(A)P(B)P(C|A,B)$$ which is substituted in the following
+$$P(A,B|C) = \frac{P(A,B,C)}{P(C)} = \frac{P(A)P(B)P(C|A,B)}{P(C)} \not= P(A|C)P(B|C) \implies A\not⊥B\ | \ C$$
+While $$P(A,B) = P(A)P(B) \implies A⊥B$$
+
+### Problem 2: Markov blanket
+
+Consider the following graphical structure of a Bayesian network:
+
+![](images/BN%20SMCP%202.png){fig-align="center"}
+
+Determine the Markov blanket $MB(D)$ of a node D and show that the
+conditional probability $P(D|A,B,C,E,F,G)$ is the same as $P(D|MB(D))$.
+
+2\) Markov blanket of D, $MB(D)$, is compose of the parents, children
+and co-parents of D. $$MB(D) = \{A,B,C,E,G\}$$
+
+$$P(D|A,B,C,E,F,G) = \frac{P(A,B,C,D,E,F,G)}{P(A,B,C,E,F,G)} = \frac{P(A,B,C,D,E,F,G)}{\sum_{d} P(A,B,C,d,E,F,G)} = \frac{P(A)P(B)P(C|D)P(D|A,B)P(E)P(E|F)P(G|D,E)}{\sum_{d} P(A)P(B)P(C|d)P(d|A,B)P(E)P(E|F)P(G|d,E)}$$
+
+Since the bottom sum is over d, terms not containing d can be factored
+out.
+
+$$ = \frac{P(A)P(B)P(E)P(E|F)P(C|D)P(D|A,B)P(G|D,E)}{P(A)P(B)P(E)P(E|F)\sum_{d} P(C|d)P(d|A,B)P(G|d,E)} = \frac{P(C|D)P(D|A,B)P(G|D,E)}{\sum_{d} P(C|d)P(d|A,B)P(G|d,E)}$$
+
+the terms left (A, B, C, E and G) are the members of the Markov blanket
+of D, there is no F. D is conditionally independent of F, given the
+Markov blanket. So...
+
+$$P(D|A,B,C,E,F,G) = P(D|A,B,C,E,G)=P(D|MB(D))$$
+
+### Problem 3: Learning Bayesian networks from protein data
+
+In this exercise, we will use the R package BiDAG1 to learn Bayesian
+networks from protein data. Download the data here. The data consists of
+the measurements of 11 phosphorylated proteins and phospholipids derived
+from primary immune system cells, subjected to both general and specific
+molecular interventions. (Hint: read the help files of the package and
+use default parameters unless otherwise stated.)
+
+(a) First, run set.seed(42) for reproducibility. Read in the data in R.
+    Report the number of variables n and the number of observations N.
+    Visualize the data in a pair plot using the ggpairs function in the
+    R package GGally. Randomly split the data into 80% training data and
+    20% test data. Initialize the parameters using the function
+    BiDAG::scoreparameters with the training data and the Bayesian
+    Gaussian equivalent (BGe) score. \[Note: The BGe score is a
+    fully-decomposable marginal likelihood function P(D \| G) for
+    scoring Bayesian networks. The main underlying assumption is that
+    the data is normally distributed with N (µ, W\^-1). The precision
+    matrix W follows a Wishart prior Wn(T\^-1, αw), where αw \> n − 1 is
+    the degrees of freedom and T is the positive definite parametric
+    matrix. The mean vector µ follows a normal prior N (ν, Wα_µ) with
+    α_µ \> 0.\]
+
+Run install.packages("BiDAG") in the R console. Then load the package by
+running library(BiDAG). You may need to install the missing packages
+graph, RBGL, and Rgraphviz from Bioconductor.
+
 ```{r}
 set.seed(42)
 data <- read.csv("hw1/2005_sachs_2_cd3cd28icam2_log_std.csv")
@@ -38,9 +102,10 @@ myScore <- scoreparameters(score = "bge", data = train_data)
 print(myScore)
 ```
 
-(b) Learn a Bayesian network using the BiDAG::iterativeMCMC function. Plot the directed
-acyclic graph (DAG). Evaluate the log BGe score of the test data against the estimated DAG
-using the function BiDAG::scoreagainstDAG.
+(b) Learn a Bayesian network using the BiDAG::iterativeMCMC function.
+    Plot the directed acyclic graph (DAG). Evaluate the log BGe score of
+    the test data against the estimated DAG using the function
+    BiDAG::scoreagainstDAG.
 
 ```{r}
 library(BiDAG)
