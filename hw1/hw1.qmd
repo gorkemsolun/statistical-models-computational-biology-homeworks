@@ -59,12 +59,12 @@ conditional probability $P(D|A,B,C,E,F,G)$ is the same as $P(D|MB(D))$.
 and co-parents of D. $$MB(D) = \{A,B,C,E,G\}$$
 
 $$P(D|A,B,C,E,F,G) = \frac{P(A,B,C,D,E,F,G)}{P(A,B,C,E,F,G)} = \frac{P(A,B,C,D,E,F,G)}{\sum_{d} P(A,B,C,d,E,F,G)} = $$
-$$ = \frac{P(A)P(B)P(C|D)P(D|A,B)P(E)P(E|F)P(G|D,E)}{\sum_{d} P(A)P(B)P(C|d)P(d|A,B)P(E)P(E|F)P(G|d,E)}$$
+$$ = \frac{P(A)P(B)P(C|D)P(D|A,B)P(F)P(E|F)P(G|D,E)}{\sum_{d} P(A)P(B)P(C|d)P(d|A,B)P(F)P(E|F)P(G|d,E)}$$
 
 Since the bottom sum is over d, terms not containing d can be factored
 out.
 
-$$ = \frac{P(A)P(B)P(E)P(E|F)P(C|D)P(D|A,B)P(G|D,E)}{P(A)P(B)P(E)P(E|F)\sum_{d} P(C|d)P(d|A,B)P(G|d,E)} = \frac{P(C|D)P(D|A,B)P(G|D,E)}{\sum_{d} P(C|d)P(d|A,B)P(G|d,E)}$$
+$$ = \frac{P(A)P(B)P(F)P(E|F)P(C|D)P(D|A,B)P(G|D,E)}{P(A)P(B)P(F)P(E|F)\sum_{d} P(C|d)P(d|A,B)P(G|d,E)} = \frac{P(C|D)P(D|A,B)P(G|D,E)}{\sum_{d} P(C|d)P(d|A,B)P(G|d,E)}$$
 
 the terms left (A, B, C, E and G) are the members of the Markov blanket
 of D, there is no F. D is conditionally independent of F, given the
