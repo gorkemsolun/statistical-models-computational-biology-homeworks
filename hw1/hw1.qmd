@@ -127,7 +127,7 @@ train_data <- data[train_indices, ]
 test_data <- data[-train_indices, ]
 
 suppressPackageStartupMessages(library(BiDAG))
-myScore <- scoreparameters(score = "bge", data = train_data)
+myScore <- scoreparameters(scoretype = "bge", data = train_data)
 print(myScore)
 ```
 
@@ -144,9 +144,9 @@ suppressPackageStartupMessages(library(graph))
 myDAG <- iterativeMCMC(myScore)
 
 g <- as(myDAG$DAG, "graphNEL")
-plot(g) 
+plot(g)
 
-testScore <- scoreparameters(score = "bge", data = test_data)
+testScore <- scoreparameters(scoretype = "bge", data = test_data)
 
 test_log_score <- sum(scoreagainstDAG(scorepar = testScore, incidence = myDAG$DAG))
 
@@ -159,6 +159,10 @@ cat("Log BGe score of test data against estimated DAG:", test_log_score, "\n")
     According to the Bayesian Network you learned in (b), which subset
     should you choose and why?
 
-    For PIP2 {plgc} because PIP2 is only dependent on plgc. For PIP3
-    subset {plgc,PIP2} because PIP3 is dependent on plgc and PIP2. In
-    total {plgc,PIP2,PIP3}.
+    For PIP3 {Plcg} because PIP3 is only dependent on Plcg. For PIP2
+    subset {Plcg, PIP3} because PIP2 is dependent on Plcg and PIP3.
+
+    If only using observed variables: PIP3 from {Plcg}, PIP2 from {Plcg}
+
+    If sequential imputation: first impute PIP3 from {Plcg}, then impute
+    PIP2 from {Plcg, PIP3}.
