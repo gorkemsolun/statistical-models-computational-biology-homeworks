@@ -55,8 +55,12 @@ Consider the following graphical structure of a Bayesian network:
 Determine the Markov blanket $MB(D)$ of a node D and show that the
 conditional probability $P(D|A,B,C,E,F,G)$ is the same as $P(D|MB(D))$.
 
-2\) Markov blanket of D, $MB(D)$, is composed of the parents, children
-and co-parents of D. $$MB(D) = \{A,B,C,E,G\}$$
+2\) The Markov Blanket (MB) of a node in a Bayesian Network consists of three specific groups of neighbors: parents, children, and other parents of its children
+Parents of D: A, B
+Children of D: C, G
+Spouses of D: Child C: D and Child G: D, E
+MB(D) = A, B, C, E, G
+P(D | A, B, C, E, F, G) = P(D | MB(D))
 
 $$P(D|A,B,C,E,F,G) = \frac{P(A,B,C,D,E,F,G)}{P(A,B,C,E,F,G)} = \frac{P(A,B,C,D,E,F,G)}{\sum_{d} P(A,B,C,d,E,F,G)} = $$
 $$ = \frac{P(A)P(B)P(C|D)P(D|A,B)P(F)P(E|F)P(G|D,E)}{\sum_{d} P(A)P(B)P(C|d)P(d|A,B)P(F)P(E|F)P(G|d,E)}$$
@@ -74,7 +78,7 @@ $$P(D|A,B,C,E,F,G) = P(D|A,B,C,E,G)=P(D|MB(D))$$
 
 ### Problem 3: Learning Bayesian networks from protein data
 
-In this exercise, we will use the R package BiDAG1 to learn Bayesian
+In this exercise, we will use the R package BiDAG to learn Bayesian
 networks from protein data. Download the data here. The data consists of
 the measurements of 11 phosphorylated proteins and phospholipids derived
 from primary immune system cells, subjected to both general and specific
@@ -88,13 +92,13 @@ use default parameters unless otherwise stated.)
     20% test data. Initialize the parameters using the function
     BiDAG::scoreparameters with the training data and the Bayesian
     Gaussian equivalent (BGe) score. \[Note: The BGe score is a
-    fully-decomposable marginal likelihood function P(D \| G) for
+    fully-decomposable marginal likelihood function P(D | G) for
     scoring Bayesian networks. The main underlying assumption is that
-    the data is normally distributed with N (µ, W\^-1). The precision
-    matrix W follows a Wishart prior Wn(T\^-1, αw), where αw \> n − 1 is
+    the data is normally distributed with N (µ, W^-1). The precision
+    matrix W follows a Wishart prior W_n(T^-1, a_w), where a_w \> n - 1 is
     the degrees of freedom and T is the positive definite parametric
-    matrix. The mean vector µ follows a normal prior N (ν, Wα_µ) with
-    α_µ \> 0.\]
+    matrix. The mean vector µ follows a normal prior N (v, Wa_µ) with
+    a_µ \> 0.\]
 
 Run install.packages("BiDAG") in the R console. Then load the package by
 running library(BiDAG). You may need to install the missing packages
@@ -116,7 +120,6 @@ cat("Number of observations (N):", N, "\n")
 
 suppressPackageStartupMessages(library(GGally))
 
-library(GGally)
 ggpairs(data)
 
 ```
