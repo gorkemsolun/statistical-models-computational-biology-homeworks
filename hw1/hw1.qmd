@@ -6,7 +6,7 @@ editor_options:
   chunk_output_type: inline
 
 title: "Homework 1: Bayesian Networks and Gene Regulation"
-author: "Bernhard Buss, Görkem Solun and Carlo Rossetto"
+author: "Bernhard Buss, Timothy Lauren Nijhuis, Carlo Rossetto and Görkem Solun"
 format: pdf
 device: "cairo_pdf"
 ---
@@ -32,6 +32,10 @@ $$P(A,B|C) = \frac{P(A,B,C)}{P(C)} = \frac{P(A|C)P(B|C)P(C)}{P(C)} = P(A|C)P(B|C
 However, since C is not null ($\varnothing$), they are not marginally
 independent, meaning $A\not⊥B$.
 
+Alternatively, the fact they are not marginally independent can also be
+shown by:
+$$ P(A,B) = \sum_{C}P(A,B,C) =\sum_{C}P(A|C)P(B|C)P(C) =\sum_{C} \frac{P(C|B)P(B)}{P(C)}\frac{P(C|A)P(A)}{P(C)}P(C) $$
+$$  =P(A)P(B)\sum_{C} \frac{P(C|B)P(C|A)}{P(C)}\not= P(A)P(B)\implies A\not⊥B\  $$
 1b) $A⊥B\ | \ C$ does not hold, for network B. $A⊥B$ does.
 
 Network b is a common effect structure/collider. Here, A and B are both
@@ -43,7 +47,7 @@ conditioning on C here, A and B remain independent.
 $$P(A,B,C) = P(A)P(B)P(C|A,B)$$ which is substituted in the following
 $$P(A,B|C) = \frac{P(A,B,C)}{P(C)} = \frac{P(A)P(B)P(C|A,B)}{P(C)} \not= P(A|C)P(B|C) \implies A\not⊥B\ | \ C$$
 While
-$$P(A,B) = \sum_{c}P(A,B,c) =\sum_{c}P(A)P(B)P(C|A,B) =P(A)P(B)\sum_{c}P(C|A,B) $$
+$$P(A,B) = \sum_{C}P(A,B,C) =\sum_{C}P(A)P(B)P(C|A,B) =P(A)P(B)\sum_{C}P(C|A,B) $$
 $$ = P(A)P(B) \cdot 1  =P(A)P(B) \implies A⊥B$$
 
 ### Problem 2: Markov blanket
@@ -58,13 +62,13 @@ conditional probability $P(D|A,B,C,E,F,G)$ is the same as $P(D|MB(D))$.
 2\) Markov blanket of D, $MB(D)$, is composed of the parents, children
 and co-parents of D. $$MB(D) = \{A,B,C,E,G\}$$
 
-$$P(D|A,B,C,E,F,G) = \frac{P(A,B,C,D,E,F,G)}{P(A,B,C,E,F,G)} = \frac{P(A,B,C,D,E,F,G)}{\sum_{d} P(A,B,C,d,E,F,G)} = $$
-$$ = \frac{P(A)P(B)P(C|D)P(D|A,B)P(F)P(E|F)P(G|D,E)}{\sum_{d} P(A)P(B)P(C|d)P(d|A,B)P(F)P(E|F)P(G|d,E)}$$
+$$P(D|A,B,C,E,F,G) = \frac{P(A,B,C,D,E,F,G)}{P(A,B,C,E,F,G)} = \frac{P(A,B,C,D,E,F,G)}{\sum_{D} P(A,B,C,D,E,F,G)} = $$
+$$ = \frac{P(A)P(B)P(C|D)P(D|A,B)P(F)P(E|F)P(G|D,E)}{\sum_{D} P(A)P(B)P(C|D)P(D|A,B)P(F)P(E|F)P(G|D,E)}$$
 
 Since the bottom sum is over d, terms not containing d can be factored
 out.
 
-$$ = \frac{P(A)P(B)P(F)P(E|F)P(C|D)P(D|A,B)P(G|D,E)}{P(A)P(B)P(F)P(E|F)\sum_{d} P(C|d)P(d|A,B)P(G|d,E)} = \frac{P(C|D)P(D|A,B)P(G|D,E)}{\sum_{d} P(C|d)P(d|A,B)P(G|d,E)}$$
+$$ = \frac{P(A)P(B)P(F)P(E|F)P(C|D)P(D|A,B)P(G|D,E)}{P(A)P(B)P(F)P(E|F)\sum_{D} P(C|D)P(D|A,B)P(G|D,E)} = \frac{P(C|D)P(D|A,B)P(G|D,E)}{\sum_{D} P(C|D)P(D|A,B)P(G|D,E)}$$
 
 the terms left (A, B, C, E and G) are the members of the Markov blanket
 of D, there is no F. D is conditionally independent of F, given the
@@ -116,7 +120,6 @@ cat("Number of observations (N):", N, "\n")
 
 suppressPackageStartupMessages(library(GGally))
 
-library(GGally)
 ggpairs(data)
 
 ```
@@ -159,10 +162,12 @@ cat("Log BGe score of test data against estimated DAG:", test_log_score, "\n")
     According to the Bayesian Network you learned in (b), which subset
     should you choose and why?
 
-    For PIP3 {Plcg} because PIP3 is only dependent on Plcg. For PIP2
-    subset {Plcg, PIP3} because PIP2 is dependent on Plcg and PIP3.
+    One can observe that MB(PIP2) = {PIP3, Plcg}, MB(PIP3) =
+    {PIP2,Plcg}. Since both PIP2 and PIP3 are unknown, one can only rely
+    on Plcg.
 
-    If only using observed variables: PIP3 from {Plcg}, PIP2 from {Plcg}
+    So, if only using observed variables: PIP3 from {Plcg}, PIP2 from
+    {Plcg}
 
     If sequential imputation: first impute PIP3 from {Plcg}, then impute
     PIP2 from {Plcg, PIP3}.
