@@ -18,7 +18,7 @@ Consider the following graphical structures, corresponding to
 $A⊥B\ | \ C$ hold? For which does the statement $A ⊥ B$ hold? Prove your
 answers by the laws of probability.
 
-![](images/BN%20SMCP.png){fig-align="center"}
+![](images/BN%20SMCP.png){fig-align="center" width="268"}
 
 1a) $A⊥B\ | \ C$ holds for Network a, $A⊥B$ does not.
 
@@ -35,6 +35,7 @@ independent, meaning $A\not⊥B$.
 Alternatively, the fact they are not marginally independent can also be
 shown by:
 $$ P(A,B) = \sum_{C}P(A,B,C) =\sum_{C}P(A|C)P(B|C)P(C) =\sum_{C} \frac{P(C|B)P(B)}{P(C)}\frac{P(C|A)P(A)}{P(C)}P(C) $$
+
 $$  =P(A)P(B)\sum_{C} \frac{P(C|B)P(C|A)}{P(C)}\not= P(A)P(B)\implies A\not⊥B\  $$
 1b) $A⊥B\ | \ C$ does not hold, for network B. $A⊥B$ does.
 
@@ -117,8 +118,6 @@ graph, RBGL, and Rgraphviz from Bioconductor.
 #| fig-height: 14
 #| out-width: "100%"
 #| message: false
-
-
 set.seed(42)
 data <- read.csv("2005_sachs_2_cd3cd28icam2_log_std.csv")
 n <- ncol(data)
@@ -127,7 +126,6 @@ cat("Number of variables (n):", n, "\n")
 cat("Number of observations (N):", N, "\n")
 
 suppressPackageStartupMessages(library(GGally))
-
 ggpairs(data)
 
 ```
@@ -164,7 +162,9 @@ test_log_score <- sum(scoreagainstDAG(scorepar = testScore, incidence = myDAG$DA
 cat("Log BGe score of test data against estimated DAG:", test_log_score, "\n")
 ```
 
-A more negative (lower) score might indicate that the model is overfitted, because the patterns learned from the training data do not generalise well to the new, unseen test data.
+A more negative (lower) score might indicate that the model is
+overfitted, because the patterns learned from the training data do not
+generalise well to the new, unseen test data.
 
 (c) Assume you receive new data where only phosphorylated proteins are
     measured but the phospholipids, PIP2 and PIP3, are not. You would
@@ -179,5 +179,5 @@ A more negative (lower) score might indicate that the model is overfitted, becau
     So, if only using observed variables: PIP3 from {Plcg}, PIP2 from
     {Plcg}.
 
-    If sequential imputation: first impute PIP3 from {Plcg}, then impute
-    PIP2 from {Plcg, PIP3}.
+    If sequential imputation: first impute PIP2 from {Plcg}, then impute
+    PIP3 from {Plcg, PIP2}.
