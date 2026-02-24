@@ -6,7 +6,7 @@ editor_options:
   chunk_output_type: inline
 
 title: "Homework 1: Bayesian Networks and Gene Regulation"
-author: "Bernhard Buss, Timothy Lauren Nijhuis, Carlo Rossetto and Görkem Solun"
+author: "Bernhard Buss, Timothy Lauren Nijhuis, Carlo Rossetto and Görkem Kadir Solun"
 format: pdf
 device: "cairo_pdf"
 ---
