@@ -118,6 +118,7 @@ graph, RBGL, and Rgraphviz from Bioconductor.
 #| fig-height: 14
 #| out-width: "100%"
 #| message: false
+
 set.seed(42)
 data <- read.csv("2005_sachs_2_cd3cd28icam2_log_std.csv")
 n <- ncol(data)
@@ -150,6 +151,7 @@ suppressPackageStartupMessages(library(BiDAG))
 suppressPackageStartupMessages(library(Rgraphviz))
 suppressPackageStartupMessages(library(graph))
 
+set.seed(42)
 myDAG <- iterativeMCMC(myScore)
 
 g <- as(myDAG$DAG, "graphNEL")
