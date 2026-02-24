@@ -164,6 +164,8 @@ test_log_score <- sum(scoreagainstDAG(scorepar = testScore, incidence = myDAG$DA
 cat("Log BGe score of test data against estimated DAG:", test_log_score, "\n")
 ```
 
+A more negative (lower) score might indicate that the model is overfitted, because the patterns learned from the training data do not generalise well to the new, unseen test data.
+
 (c) Assume you receive new data where only phosphorylated proteins are
     measured but the phospholipids, PIP2 and PIP3, are not. You would
     like to impute PIP2 and PIP3 from (a subset of) the other variables.
