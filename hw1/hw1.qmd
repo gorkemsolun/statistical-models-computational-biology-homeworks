@@ -59,12 +59,16 @@ Consider the following graphical structure of a Bayesian network:
 Determine the Markov blanket $MB(D)$ of a node D and show that the
 conditional probability $P(D|A,B,C,E,F,G)$ is the same as $P(D|MB(D))$.
 
-2\) The Markov Blanket (MB) of a node in a Bayesian Network consists of three specific groups of neighbors: parents, children, and other parents of its children
-Parents of D: A, B
-Children of D: C, G
-Spouses of D: Child C: D and Child G: D, E
-MB(D) = A, B, C, E, G
-P(D | A, B, C, E, F, G) = P(D | MB(D))
+2\) The Markov Blanket (MB) of a node in a Bayesian Network consists of
+three specific groups of neighbors: parents, children, and other parents
+of its children.
+
+Parents of D: A, B. Children of D: C, G. Spouses of D: Child C: D and
+Child G: D, E.
+
+MB(D) = A, B, C, E, G.
+
+$$P(D|A, B, C, E, G) = P(D|MB(D))$$
 
 $$P(D|A,B,C,E,F,G) = \frac{P(A,B,C,D,E,F,G)}{P(A,B,C,E,F,G)} = \frac{P(A,B,C,D,E,F,G)}{\sum_{D} P(A,B,C,D,E,F,G)} = $$
 $$ = \frac{P(A)P(B)P(C|D)P(D|A,B)P(F)P(E|F)P(G|D,E)}{\sum_{D} P(A)P(B)P(C|D)P(D|A,B)P(F)P(E|F)P(G|D,E)}$$
@@ -96,11 +100,11 @@ use default parameters unless otherwise stated.)
     20% test data. Initialize the parameters using the function
     BiDAG::scoreparameters with the training data and the Bayesian
     Gaussian equivalent (BGe) score. \[Note: The BGe score is a
-    fully-decomposable marginal likelihood function P(D | G) for
+    fully-decomposable marginal likelihood function P(D \| G) for
     scoring Bayesian networks. The main underlying assumption is that
-    the data is normally distributed with N (µ, W^-1). The precision
-    matrix W follows a Wishart prior W_n(T^-1, a_w), where a_w \> n - 1 is
-    the degrees of freedom and T is the positive definite parametric
+    the data is normally distributed with N (µ, W\^-1). The precision
+    matrix W follows a Wishart prior W_n(T\^-1, a_w), where a_w \> n - 1
+    is the degrees of freedom and T is the positive definite parametric
     matrix. The mean vector µ follows a normal prior N (v, Wa_µ) with
     a_µ \> 0.\]
 
@@ -166,12 +170,12 @@ cat("Log BGe score of test data against estimated DAG:", test_log_score, "\n")
     According to the Bayesian Network you learned in (b), which subset
     should you choose and why?
 
-    One can observe that MB(PIP2) = {PIP3, Plcg}, MB(PIP3) =
+    One can observe that MB(PIP2) = {PIP3, Plcg} and MB(PIP3) =
     {PIP2,Plcg}. Since both PIP2 and PIP3 are unknown, one can only rely
     on Plcg.
 
     So, if only using observed variables: PIP3 from {Plcg}, PIP2 from
-    {Plcg}
+    {Plcg}.
 
     If sequential imputation: first impute PIP3 from {Plcg}, then impute
     PIP2 from {Plcg, PIP3}.
