@@ -1,0 +1,135 @@
+---
+title: "Project 2 EM Algorithm"
+output: pdf
+---
+
+```{r}
+set.seed(42)
+library(patchwork)
+library(ggplot2)
+```
+
+## (a) The EM algorithm
+
+Please write your code in the indicated blocks.
+
+
+```{r}
+##' This function implements the EM algorithm for the gene mutation problem
+##' @param D Data matrix of dimensions N-by-100, where N is the number of observations
+##' @param k Number of cell groups
+##' @param lambda Vector of mixture weights
+##' @param theta Vector of probabilities of mutations
+##' @param tolerance A threshold used to check convergence
+mutation_EM <- function(D, k, lambda, theta, tolerance = 1e-2) {
+  
+  # observed log-likelihood
+  ll_obs <- -Inf
+  # difference between two iterations
+  diff <- Inf
+  # number of observations
+  N <- nrow(D)
+  # responsibilities
+  gamma <- matrix(0, nrow = k, ncol = N)
+  # keep track of lambda and theta during the optimization
+  lambda_all <- lambda
+  theta_all <- theta
+  # iteration number
+  t <- 1
+
+
+  # run the E-step and M-step until convergence 
+  while (diff > tolerance) {
+    
+    ############# E-step #############
+    
+    ### YOUR CODE STARTS ###
+    
+    # Compute the responsibilities
+    # ...
+
+    # Update observed log-likelihood 
+    # ll_obs_new <- ...
+    ll_obs <- c(ll_obs, ll_obs_new) 
+    # keep track of ll_obs throughout iterations
+
+    # Recompute difference between two iterations
+    diff <- abs(ll_obs[t] - ll_obs[t+1])
+
+    
+    ############# M-step #############
+    
+    # Recompute priors (mixture weights)
+    # ... 
+
+    lambda_all <- rbind(lambda_all, lambda)
+    # keep track of lambda throughout iterations
+    
+    # Recompute probability of mutation for each cell group
+    # ...
+    
+    theta_all <- rbind(theta_all, theta)
+    # keep track of theta throughout iterations
+
+    t <- t+1
+  }
+  ### YOUR CODE ENDS ###
+  
+  return(list(ll_obs = ll_obs, lambda = lambda, theta = theta, gamma = gamma, 
+              lambda_all = lambda_all, theta_all = theta_all))
+  
+}
+```
+
+
+## (b) Load data, initialize parameters, and run the EM algorithm.
+
+```{r}
+# read the data into D
+D <- read.csv("hw2_student/mutations.csv")
+D <- as.matrix(D)
+# check the dimension of D
+all(dim(D) == c(200, 100))
+
+# number of cell groups
+k <- 2
+# mixture weights (a vector of length k)
+lambda <- c(0.5, 0.5)
+# probabilities of mutation (having a 1 in the data) (a vector of length k)
+theta <- c(0.6, 0.4)
+
+# run the EM algorithm
+res <- mutation_EM(D, k, lambda, theta)
+```
+
+
+## (c) Plotting convergence.
+
+Observed log-likelihood throughout iterations:
+
+```{r}
+## YOUR CODE ##
+```
+
+Probabilities of mutation throughout iterations:
+
+```{r}
+## YOUR CODE ##
+```
+
+Mixture weights throughout iterations:
+
+```{r}
+## YOUR CODE ##
+```
+
+
+## (D) Responsibilities at final iteration:
+
+Heatmap of responsibilities:
+
+```{r}
+## YOUR CODE ##
+```
+
+How many cells belong to the mutated group, and how many cells belong to the wild-type group?
