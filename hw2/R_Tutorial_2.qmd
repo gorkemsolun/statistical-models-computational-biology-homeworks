@@ -1,0 +1,260 @@
+---
+title: "Advanced R tutorial: EM algorithm"
+date: "February 25, 2026"
+format: pdf
+---
+
+## Motif finding
+
+We assume that reads consisting of several of the bases A,C,G,T (1,2,3,4) come from either a background distribution (independent of position) or an alternative.
+
+First, we have to define the ground truth parameters. They contain the probabilities of the alternative and the mixture weight.
+
+```{r}
+## load plotting libraries
+library(ggplot2)
+library(patchwork)
+
+## random parameters
+set.seed(2024)
+
+# generate probabilities of sampling nucleotides
+phi1 <- matrix(runif(10*4, 0, 1), 4)
+phi1 <- apply(phi1, 2, function(x) x/sum(x))
+phi2 <- runif(4, 0, 1)
+phi2 <- phi2/sum(phi2)
+
+# generate mixing weights
+mw <- runif(1, 0.1, 0.9)
+
+```
+
+In the next part, we generate data (reads of length n=10) based on our ground truth parameters. 
+
+```{r}
+## generate data
+nreads <- 100
+data1 <- numeric()
+for (i in 1:10) {  
+  # iterate over alignment position
+    tmp <- numeric()
+    for (j in 1:round(nreads*mw)) {  
+      # iterate over reads of the motif component 
+        tmp <- c(tmp, sample(1:4, 1, prob = phi1[, i])) 
+        # sample base
+    }
+    data1 <- cbind(data1, tmp) 
+}
+data0 <- numeric()
+for (i in 1:10) { 
+  # iterate over alignment position
+    tmp <- numeric()
+    for (j in 1:round(nreads*(1-mw))) {  
+      # iterate over reads of the background component 
+        tmp <- c(tmp, sample(1:4, 1, prob = phi2))
+    }
+    data0 <- cbind(data0, tmp)
+}
+data <- rbind(data1, data0)
+```
+
+## plot sequences
+
+```{r}
+data_long <- reshape2::melt(unname(data), varnames = c("Seq", "Position"), 
+                            value.name = "base")
+
+# Plot
+ggplot(data_long, aes(x = Position, y = Seq, fill = factor(base))) +
+  geom_tile() +
+  geom_hline(yintercept = round(nreads*mw), linetype = "dashed") +  
+  # Add horizontal dashed line at y = mw
+  labs(x = "Position", y = "Sequence Index", fill = "Base") +
+  theme_minimal()
+```
+
+We pretend to neither know the model parameters nor which component generated which read. We use an expectation maximization algorithm to iteratively compute the expectation of the reads and the model parameters until convergence.
+
+```{r}
+## implementation of the EM
+em <- function(data) {
+    ## random inits
+    m1 <- matrix(runif(4*ncol(data), 0, 1), 4)  
+    # parameters for nucleotide frequencies in the motif
+    m1 <- apply(m1, 2, function(x) x/sum(x))
+    m0 <- runif(4, 0, 1) 
+    # parameters for nucleotide frequencies in the background
+    m0 <- m0/sum(m0)
+    lambda <- runif(1) 
+    # mixture weights
+    ## initial E-step
+    probs <- matrix(0, nrow(data), 2) 
+    # store responsibilities 
+    for (i in 1:nrow(data)) { 
+      # iterate over sequences
+        tmp <- tmp0 <- 1
+        for (j in 1:ncol(data)) { 
+          # iterate over alignment columns
+            ## product over the probabilities of each data point of a sample 
+            #given each component
+            tmp <- m1[data[i, j], j]*tmp   
+            # access the rows of m1 which is equal to data[i, j], and its jth column 
+            tmp0 <- m0[data[i, j]]*tmp0  
+            # access the row of m0 which is equal to data[i, j]
+        }
+        probs[i, 1] <- tmp*lambda 
+        # multiply by mixture weights to obtain unnormalised responsibilities
+        probs[i, 2] <- tmp0*(1-lambda)
+    }
+    ## calculate the observed data log likelihood of the model
+    lls <- ll <- sum(log(apply(probs, 1, sum)))
+    probs <- t(apply(probs, 1, function(x) x/sum(x))) 
+    # normalise the responsibilities 
+    probs_all <- probs[,1] 
+    # to keep track of this quantity 
+    lambda <- apply(probs, 2, sum) 
+    # compute mixture weights
+    lambdas <- lambda <- lambda[1]/sum(lambda)
+    llold <- log(0)
+    count <- 0
+    while(count < 100) {  
+      # iterate the EM
+        count <- count + 1
+        llold <- ll
+        lambda_old <- lambda
+        ## M-step
+        m0 <- 0 
+        for (i in 1:ncol(data)) { 
+          # iterate over positions see slide 20
+            ## calculate new parameters for nucleotide frequencies in the motif 
+            # with weighted probabilities
+            m1[, i] <- c(sum(probs[which(data[, i] == 1), 1]), 
+                         # <- sum the probs of the first component 
+                         # (column index == 1), 
+                         sum(probs[which(data[, i] == 2), 1]), 
+                         # where row index corresponds to the nucleotide 
+                         sum(probs[which(data[, i] == 3), 1]), 
+                         # appearing in the data at that position 
+                         sum(probs[which(data[, i] == 4), 1])) 
+            m0 <- m0 + c(sum(probs[which(data[, i] == 1), 2]),
+                          sum(probs[which(data[, i] == 2), 2]),
+                          sum(probs[which(data[, i] == 3), 2]),
+                          sum(probs[which(data[, i] == 4), 2]))
+        }
+        m1 <- apply(m1, 2, function(x) x/sum(x)) 
+        # normalise
+        m0 <- m0/sum(m0)
+        ## E-step, as above
+        probs <- matrix(0, nrow(data), 2)
+        for (i in 1:nrow(data)) { 
+          # iterate over sequences
+            tmp <- tmp0 <- 1
+            for (j in 1:ncol(data)) { 
+              # iterate over alignment columns
+                ## product over the probabilities of each data point of a sample 
+                # given each component
+                tmp <- m1[data[i, j], j]*tmp  
+                # access the rows of m1 which is equal to data[i, j], and its jth column 
+                tmp0 <- m0[data[i, j]]*tmp0 
+                # access the row of m0 which is equal to data[i, j]
+            }
+            probs[i, 1] <- tmp*lambda 
+            # multiply by mixture weights to obtain unnormalised responsibilities
+            probs[i, 2] <- tmp0*(1-lambda)
+        }
+        ## calculate the observed data log likelihood of the model
+        ll <- sum(log(apply(probs, 1, sum)))
+        lls <- c(lls, ll)
+        probs <- t(apply(probs, 1, function(x) x/sum(x))) 
+        # normalise the responsibilities 
+        lambda <- apply(probs, 2, sum)  
+        # compute mixture weights, see slide 19
+        lambda <- lambda[1]/sum(lambda)
+        lambdas <- c(lambdas, lambda)
+        probs_all <- cbind(probs_all, probs[,1])
+    }
+    return(list(phi1 = m1, phi2 = m0, lambda = lambda, ll = ll, lls = lls, 
+                lambdas = lambdas, probs = probs, probs_all = probs_all))
+}
+```
+
+We put the data into our our function and let it run. To assess the result, we plot the ground truth against our inferred values.
+
+```{r}
+res <- em(data)
+
+## plot correlation between parameters
+
+# Create a data frame for ggplot
+plot_data <- data.frame(
+  x = c(as.vector(phi1), phi2),
+  y = c(as.vector(res$phi1), res$phi2)
+)
+
+# Calculate correlation
+cor_value <- cor(plot_data$x, plot_data$y)
+
+# Plot using ggplot
+ggplot(plot_data, aes(x = x, y = y)) +
+  geom_point() + # Plot points
+  geom_abline(intercept = 0, slope = 1, color = "red") + 
+  # Add y=x line
+  ggtitle(paste("Correlation:", round(cor_value, 3))) + 
+  # Add correlation as title
+  theme_light() + 
+  # Use a light theme
+  xlab("True parameters") + 
+  # Label for x-axis
+  ylab("Inferred parameters") 
+# Label for y-axis
+
+
+## convergence rate of LLS and lambda
+plot_data <- data.frame(Step = 1:length(res$lls), LLS = res$lls, lambdas = res$lambdas)
+
+# plot lls
+plt1 <- ggplot(plot_data, aes(x = Step, y = LLS)) +
+  geom_line() + 
+  labs(
+    title = "Convergence of the log likelihood",
+    x = "Step",
+    y = "LLS Value"
+  ) +
+  theme_light() 
+
+
+## plot  of lambda
+plt2 <- ggplot(plot_data, aes(x = Step, y = lambdas)) +
+  geom_line() + 
+  labs(
+    title = "Convergence of lambda",
+    x = "Step",
+    y = "LLS Value"
+  ) +
+  geom_hline(yintercept = mw, linetype = "dashed", color = "blue") +  
+  # Add horizontal dashed line at y = mw
+  annotate("text", x = Inf, y = mw, label = "Groundtruth", vjust = 0,
+           hjust = 1, color = "blue") +  
+  # Add label
+  theme_light() +
+  ylim(c(0,1))
+
+plt1 + plt2
+
+## plot progression of sequence assignment
+data_long <- reshape2::melt(t(unname(res$probs_all)), 
+                            varnames = c("Time", "Sequence"), 
+                            value.name = "Probability")
+
+# Plot
+ggplot(data_long, aes(x = Time, y = Sequence, fill = Probability)) +
+  geom_tile() +
+  scale_fill_gradient(low = "blue", high = "red") +
+  geom_hline(yintercept = round(nreads*mw), linetype = "dashed") +  
+  # Add horizontal dashed line at y = mw
+  labs(x = "Time", y = "Sequence Index", fill = "P(Component 1)") +
+  theme_minimal()
+
+
+
+```
