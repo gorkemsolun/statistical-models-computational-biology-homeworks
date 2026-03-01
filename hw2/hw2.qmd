@@ -115,7 +115,18 @@ $$\implies \theta_{k}^{new} = \frac{\sum_{i=1}^{N}\gamma_{ik}\sum_{l = 1}^{L}X_{
 
 ## (5) TSG inactivation problem implementation
 
+Suppose that we sequenced 200 cells from a tumor biopsy sample. The file ‘mutations.csv’ contains
+mutation calls (denoted 1 if the position is mutated, and 0 otherwise) for 100 positions of interest
+in the genome, for the 200 cells in the sample. We will implement the EM algorithm formulated
+above, to learn which cells belong to which group and the mutation probabilities of each group.
+Please use the R code skeleton hw2_EM_skeleton.qmd on Moodle for this question, and make sure
+to include the filled-out code sections in your submission.
+
 ### (5a) The EM algorithm
+
+Complete the implementation of the EM algorithm in the code skeleton.
+Note: Beware of numerical instability when multiplying large amount of numbers together –
+do additions of logarithms whenever possible.
 
 Please write your code in the indicated blocks.
 
@@ -134,6 +145,8 @@ mutation_EM <- function(D, k, lambda, theta, tolerance = 1e-2) {
   diff <- Inf
   # number of observations
   N <- nrow(D)
+  # number of positions
+  L <- ncol(D)
   # responsibilities
   gamma <- matrix(0, nrow = k, ncol = N)
   # keep track of lambda and theta during the optimization
@@ -142,7 +155,6 @@ mutation_EM <- function(D, k, lambda, theta, tolerance = 1e-2) {
   # iteration number
   t <- 1
 
-
   # run the E-step and M-step until convergence 
   while (diff > tolerance) {
     
@@ -150,11 +162,29 @@ mutation_EM <- function(D, k, lambda, theta, tolerance = 1e-2) {
     
     ### YOUR CODE STARTS ###
     
-    # Compute the responsibilities
-    # ...
+    # Compute the responsibilities using log-space to avoid underflow
+    # For each observation i and component j, compute
+    # log(lambda_j) + sum_l [ X_l^(i) * log(theta_j) + (1 - X_l^(i)) * log(1 - theta_j) ]
+    log_rho <- matrix(0, nrow = k, ncol = N)
+    for (j in 1:k) {
+      # Sum of X_l * log(theta_j) + (1-X_l) * log(1-theta_j) for each observation
+      log_lik <- D %*% rep(log(theta[j]), L) + (1 - D) %*% rep(log(1 - theta[j]), L)
+      # log(lambda_j) + log(P(X^(i) | theta_j))
+      log_rho[j, ] <- log(lambda[j]) + as.vector(log_lik)
+    }
+    
+    # Normalise responsibilities using log-sum-exp trick
+    log_sum <- apply(log_rho, 2, function(x) {
+      m <- max(x)
+      m + log(sum(exp(x - m)))
+    })
+    for (j in 1:k) {
+      gamma[j, ] <- exp(log_rho[j, ] - log_sum)
+    }
 
-    # Update observed log-likelihood 
-    # ll_obs_new <- ...
+    # Update observed log-likelihood
+    # ll_obs_new = sum_i log( sum_j lambda_j * P(X^(i) | theta_j) )
+    ll_obs_new <- sum(log_sum)
     ll_obs <- c(ll_obs, ll_obs_new) 
     # keep track of ll_obs throughout iterations
 
@@ -165,13 +195,21 @@ mutation_EM <- function(D, k, lambda, theta, tolerance = 1e-2) {
     ############# M-step #############
     
     # Recompute priors (mixture weights)
-    # ... 
+    # lambda_j^new = sum_i gamma_ij / N
+    for (j in 1:k) {
+      lambda[j] <- sum(gamma[j, ]) / N
+    }
 
     lambda_all <- rbind(lambda_all, lambda)
     # keep track of lambda throughout iterations
     
     # Recompute probability of mutation for each cell group
-    # ...
+    # theta_j^new = sum_i gamma_ij * sum_l X_l^(i) / (L * sum_i gamma_ij)
+    for (j in 1:k) {
+      numerator <- sum(gamma[j, ] * rowSums(D))
+      denominator <- L * sum(gamma[j, ])
+      theta[j] <- numerator / denominator
+    }
     
     theta_all <- rbind(theta_all, theta)
     # keep track of theta throughout iterations
@@ -188,6 +226,10 @@ mutation_EM <- function(D, k, lambda, theta, tolerance = 1e-2) {
 
 ### (5b) Load data, initialize parameters, and run the EM algorithm.
 
+Use the given code to read in the data stored in the file ‘mutations.csv’, and to initialize the
+mixture weights λ and the mutation probabilities θ. We assume a priori that the mixture
+weights are uniform, and θ_1 > θ_2. Run the completed EM algorithm on this data.
+
 ```{r}
 # read the data into D
 D <- read.csv("mutations.csv")
@@ -203,36 +245,122 @@ lambda <- c(0.5, 0.5)
 theta <- c(0.6, 0.4)
 
 # run the EM algorithm
-#res <- mutation_EM(D, k, lambda, theta)
+res <- mutation_EM(D, k, lambda, theta)
 ```
 
 ### (5c) Plotting convergence.
 
+Plot the following quantities (y-axis) as a function of the number of iterations (x-axis) in three
+separate plots:
+• the observed log-likelihood (recall that this is computed by marginalizing out the hidden
+variables)
+• the mutation probabilities θ_1 and θ_2, and
+• the mixture weights λ_1 and λ_2.
+
 Observed log-likelihood throughout iterations:
 
 ```{r}
-## YOUR CODE ##
+# Remove the initial -Inf for plotting
+ll_data <- data.frame(
+  Iteration = 1:(length(res$ll_obs) - 1),
+  LogLikelihood = res$ll_obs[-1]
+)
+
+ggplot(ll_data, aes(x = Iteration, y = LogLikelihood)) +
+  geom_line() +
+  geom_point(size = 1.5) +
+  labs(title = "Observed Log-Likelihood Convergence",
+       x = "Iteration", y = "Observed Log-Likelihood") +
+  theme_light()
 ```
 
 Probabilities of mutation throughout iterations:
 
 ```{r}
-## YOUR CODE ##
+theta_data <- data.frame(
+  Iteration = 0:(nrow(res$theta_all) - 1),
+  Theta1 = res$theta_all[, 1],
+  Theta2 = res$theta_all[, 2]
+)
+theta_long <- rbind(
+  data.frame(Iteration = theta_data$Iteration, Component = "Theta1", Theta = theta_data$Theta1),
+  data.frame(Iteration = theta_data$Iteration, Component = "Theta2", Theta = theta_data$Theta2)
+)
+
+ggplot(theta_long, aes(x = Iteration, y = Theta, color = Component)) +
+  geom_line() +
+  geom_point(size = 1.5) +
+  labs(title = "Mutation Probabilities Throughout Iterations",
+       x = "Iteration", y = expression(theta)) +
+  scale_color_manual(values = c("Theta1" = "red", "Theta2" = "blue"),
+                     labels = c(expression(theta[1]~"(mutated)"),
+                                expression(theta[2]~"(wild-type)"))) +
+  theme_light()
 ```
 
 Mixture weights throughout iterations:
 
 ```{r}
-## YOUR CODE ##
+lambda_data <- data.frame(
+  Iteration = 0:(nrow(res$lambda_all) - 1),
+  Lambda1 = res$lambda_all[, 1],
+  Lambda2 = res$lambda_all[, 2]
+)
+lambda_long <- rbind(
+  data.frame(Iteration = lambda_data$Iteration, Component = "Lambda1", Lambda = lambda_data$Lambda1),
+  data.frame(Iteration = lambda_data$Iteration, Component = "Lambda2", Lambda = lambda_data$Lambda2)
+)
+
+ggplot(lambda_long, aes(x = Iteration, y = Lambda, color = Component)) +
+  geom_line() +
+  geom_point(size = 1.5) +
+  labs(title = "Mixture Weights Throughout Iterations",
+       x = "Iteration", y = expression(lambda)) +
+  scale_color_manual(values = c("Lambda1" = "red", "Lambda2" = "blue"),
+                     labels = c(expression(lambda[1]~"(mutated)"),
+                                expression(lambda[2]~"(wild-type)"))) +
+  ylim(0, 1) +
+  theme_light()
 ```
 
 ### (5d) Responsibilities at final iteration:
 
+Plot a heatmap of the responsibilities γ at the final step, where columns are sequences, rows
+are components, and values indicate the responsibility of component k for X^(i). For each cell,
+we assign it to the component with higher probability. How many cells belong to the mutated
+group, and how many cells belong to the wild-type group?
+
 Heatmap of responsibilities:
 
 ```{r}
-## YOUR CODE ##
+# gamma is k x N; rows = components, columns = sequences
+# Sort cells by responsibility to the mutated component for clearer visualization
+cell_order <- order(res$gamma[1, ], decreasing = TRUE)
+gamma_sorted <- res$gamma[, cell_order]
+
+resp_data <- rbind(
+  data.frame(Component = "Mutated", Cell = 1:ncol(gamma_sorted),
+             Responsibility = gamma_sorted[1, ]),
+  data.frame(Component = "Wild-type", Cell = 1:ncol(gamma_sorted),
+             Responsibility = gamma_sorted[2, ])
+)
+
+ggplot(resp_data, aes(x = Cell, y = Component, fill = Responsibility)) +
+  geom_tile() +
+  scale_fill_gradient(low = "blue", high = "red",
+                      name = expression(gamma[ik])) +
+  labs(title = "Responsibilities at Final Iteration (sorted by mutated responsibility)",
+       x = "Cell Index (sorted)", y = "Component") +
+  theme_minimal()
 ```
 
 How many cells belong to the mutated group, and how many cells belong to
 the wild-type group?
+
+```{r}
+# Assign each cell to the component with the highest responsibility
+n_mutated <- sum(res$gamma[1, ] > 0.5)
+n_wildtype <- sum(res$gamma[1, ] <= 0.5)
+cat("Number of cells in the mutated group:", n_mutated, "\n")
+cat("Number of cells in the wild-type group:", n_wildtype, "\n")
+```
