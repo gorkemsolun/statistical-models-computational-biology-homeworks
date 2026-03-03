@@ -111,17 +111,24 @@ $$ \gamma_{ik} =\frac{\lambda_{k}\prod_{l = 1}^{L}\theta_{k}^{X_{l}^{(i)}}(1-\th
 We derive the M-step update formulae for parameters $\lambda$ and
 $\theta$.
 
-The M-step maximise $F(q,\theta)$ with respect to $\theta$:
+The M-step maximises $F(q,\lambda,\theta)$ with respect to $(\lambda,\theta)$:
 
 $$
-F(q,\theta) =E_{q}[l_{hid}(\theta)] - E_{q}[\log(q(Z))]
+F(q,\lambda,\theta) =E_{q}[l_{hid}(\lambda,\theta)] - E_{q}[\log(q(Z))]
 $$
 
-Since only $E_{q}[l_{hid}(\theta)]$ depends on $\theta$,
-$E_{q}[l_{hid}(\theta)]$ is maximised. For a motif mixture model, as
+$E_{q}[\log(q(Z))$ is a constant with respect to $(\lambda,\theta)$, and thus can be ignored. Therefore, the M-step update formulae can be derived by maximising $E_{q}[l_{hid}(\lambda,\theta)]$ with respect to $(\lambda,\theta)$. Since $\lambda$ and $\theta$ are separate parameters, we maximise it separately:
+
+$$
+E_q\!\left[l_{\mathrm{hid}}(\lambda,\theta)\right]
+=
+Q_{\lambda}(\lambda) + Q_{\theta}(\theta)
+$$
+
+For a motif mixture model, as
 shown in the lectures, the complete data likelihood can be further
 simplified to:
-$$ E_{q}[l_{hid}(\theta)] = \sum_{i,k}\gamma_{ik}\log(\lambda_k) + \sum_{i,k}\gamma_{ik}\log(P(X^{(i)}|\theta_k)) $$
+$$ E_{q}[l_{hid}(\lambda,\theta)] = \sum_{i,k}\gamma_{ik}\log(\lambda_k) + \sum_{i,k}\gamma_{ik}\log(P(X^{(i)}|\theta_k)) $$
 Maximisation with respect to the $\lambda_k$ involves only the left sum
 term.
 $$ J(\lambda, \mu) = \mu \left( 1 - \sum_{k=1}^2 \lambda_k \right) + \sum_{i=1}^N \sum_{k=1}^2 \gamma_{ik} \log \lambda_k$$
@@ -143,17 +150,33 @@ $$ P(X^{(i)}|\theta_{k}) = \prod_{l = 1}^{L}\theta_{k}^{X_{l}^{(i)}}(1-\theta_{k
 The right sum becomes
 $$\sum_{i,k}\gamma_{ik}\log(P(X^{(i)}|\theta_k)) = \sum_{i=1}^N \sum_{k=1}^{2} \gamma_{ik}\log(P(X^{(i)}|\theta_k)) = \sum_{i=1}^N \sum_{k=1}^{2}\gamma_{ik}\log\left(\prod_{l = 1}^{L}\theta_{k}^{X_{l}^{(i)}}(1-\theta_{k})^{\left(1 - X_{l}^{(i)}\right)}\right) =$$
 $$ \sum_{i=1}^N \sum_{k=1}^{2} \gamma_{ik}\sum_{l = 1}^{L}\left(X_{l}^{(i)}\log(\theta_{k})+(1 - X_{l}^{(i)})\log(1-\theta_{k})\right)$$
-For ease the expression above is set $=f$. In order to find the optimal
-$\theta$ the first derivative is set $=0$.
-$$ f = \sum_{i=1}^N \sum_{k=1}^{2} \gamma_{ik}\sum_{l = 1}^{L}\left(X_{l}^{(i)}\log(\theta_{k})+(1 - X_{l}^{(i)})\log(1-\theta_{k})\right) $$
 
-When taking the derivative, the $\sum_{k = 1}^{2}$ falls out
-$$\frac{\partial{f}}{\partial{\theta_k}} = 0 = \sum_{i=1}^{N}\gamma_{ik}\sum_{l = 1}^{L}\left(\frac{X_{l}^{(i)}}{\theta_{k}}-\frac{1 - X_{l}^{(i)}}{1-\theta_{k}}\right) $$\
+For convenience, define the objective
+$$
+f(\theta)
+=
+\sum_{i=1}^{N}\sum_{k=1}^{2}\gamma_{ik}\sum_{l=1}^{L}\left(
+X_{l}^{(i)}\log(\theta_{k})+(1-X_{l}^{(i)})\log(1-\theta_{k})
+\right)
+$$
+
+To find the optimal $\theta_k$, we set the partial derivative with respect to $\theta_k$ equal to zero.
+When differentiating w.r.t. $\theta_k$, the terms with $k' \neq k$ do not depend on $\theta_k$ and their derivative is zero.
+Therefore, only the $k$-th component term contributes:
+
+$$
+0
+=
+\frac{\partial f(\theta)}{\partial \theta_k}
+=
+\sum_{i=1}^{N}\gamma_{ik}\sum_{l=1}^{L}\left(
+\frac{X_{l}^{(i)}}{\theta_{k}}-\frac{1-X_{l}^{(i)}}{1-\theta_{k}}
+\right)
+$$
 $$ = \sum_{i=1}^{N}\gamma_{ik}\sum_{l = 1}^{L}\left(\frac{X_{l}^{(i)}(1-\theta_{k})-\theta_{k}(1 - X_{l}^{(i)})}{\theta_{k}(1-\theta_{k})}\right) = \sum_{i=1}^{N}\gamma_{ik}\sum_{l = 1}^{L}\left(\frac{X_{l}^{(i)}-\theta_{k}}{\theta_{k}(1-\theta_{k})}\right)$$
-$$\implies \sum_{i=1}^{N}\gamma_{ik}\sum_{l = 1}^{L}\left(\frac{\theta_{k}}{\theta_{k}(1-\theta_{k})}\right) = \sum_{i=1}^{N}\gamma_{ik}\sum_{l = 1}^{L}\left(\frac{X_{l}^{(i)}}{\theta_{k}(1-\theta_{k})}\right)$$
-$$\implies \left(\frac{\theta_{k}}{\theta_{k}(1-\theta_{k})}\right) \sum_{i=1}^{N}\gamma_{ik}\sum_{l = 1}^{L}1 = \left(\frac{1}{\theta_{k}(1-\theta_{k})}\right)\sum_{i=1}^{N}\gamma_{ik}\sum_{l = 1}^{L}X_{l}^{(i)}$$
-$$\implies \theta_{k}\cdot L\sum_{i=1}^{N}\gamma_{ik} = \sum_{i=1}^{N}\gamma_{ik}\sum_{l = 1}^{L}X_{l}^{(i)} $$
-$$\implies \theta_{k}^{new} = \frac{\sum_{i=1}^{N}\gamma_{ik}\sum_{l = 1}^{L}X_{l}^{(i)}}{L\sum_{i=1}^{N}\gamma_{ik}}$$
+$$\Rightarrow\ 0 = \sum_{i=1}^{N}\gamma_{ik}\sum_{l=1}^{L}\left(X_{l}^{(i)}-\theta_{k}\right) = \sum_{i=1}^{N}\gamma_{ik}\sum_{l=1}^{L}X_{l}^{(i)} - \theta_{k}\,L\sum_{i=1}^{N}\gamma_{ik}$$
+$$\Rightarrow \theta_{k}\cdot L\sum_{i=1}^{N}\gamma_{ik} = \sum_{i=1}^{N}\gamma_{ik}\sum_{l = 1}^{L}X_{l}^{(i)} $$
+$$\Rightarrow \theta_{k}^{new} = \frac{\sum_{i=1}^{N}\gamma_{ik}\sum_{l = 1}^{L}X_{l}^{(i)}}{L\sum_{i=1}^{N}\gamma_{ik}}$$
 
 ## (5) TSG inactivation problem implementation
 
