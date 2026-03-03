@@ -62,8 +62,8 @@ using the EM algorithm.
 
 Let us define binary hidden variables $Z^{(ik)}$, where $Z^{(ik)} = 1$
 if and only if $X^{(i)}$ is generated from component $k$. We write down
-the complete-data log-likelihood $\log P(X,Z|\lambda,\theta)$ in
-terms of $X^{(i)}$, $Z^{(i)}$, $\lambda$, and $\theta$:
+the complete-data log-likelihood $\log P(X,Z|\lambda,\theta)$ in terms
+of $X^{(i)}$, $Z^{(i)}$, $\lambda$, and $\theta$:
 
 $$\log(P(X,Z|\lambda,\theta)) = \sum_{i = 1}^{N}\log(P(X^{(i)},Z^{(i)} | \lambda,\theta) = \sum_{i = 1}^{N}\sum_{k = 1}^{2}Z^{(ik)}\log(\lambda_{k}P(X^{(i)}|\theta_{k}))$$
 $P(X^{(i)}|\theta_k)$ follows a Bernoulli distribution with probability
@@ -89,11 +89,10 @@ $$
 
 Let us define the responsibility of component $k$ for observation $i$ as
 the posterior probability that $Z^{(ik)}$ is 1:
-$$\gamma_{ik} := P(Z^{(ik)} = 1|X^{(i)},\lambda,\theta).$$ Express $\gamma_{ik}$ in terms of $X^{(i)}$, $\lambda$, and $\theta$.
+$$\gamma_{ik} := P(Z^{(ik)} = 1|X^{(i)},\lambda,\theta).$$ Express
+$\gamma_{ik}$ in terms of $X^{(i)}$, $\lambda$, and $\theta$.
 
-Using Bayes theorem:
-$$ P(G|C) = \frac{P(G)P(C|G)}{P(C)}$$
-Resulting in:
+Using Bayes theorem: $$ P(G|C) = \frac{P(G)P(C|G)}{P(C)}$$ Resulting in:
 $$ P(Z^{(ik)}=1|X^{(i)},\lambda,\theta) = \frac{P(Z^{(ik)}=1|\lambda)P(X^{(i)}|Z^{(ik)}=1,\theta)}{P(X^{(i)}|\lambda,\theta)} $$
 Substituting the model components prior probability:
 $$ P(Z^{(ik)}=1|\lambda) = \lambda_k $$ and likelihood:
@@ -111,13 +110,18 @@ $$ \gamma_{ik} =\frac{\lambda_{k}\prod_{l = 1}^{L}\theta_{k}^{X_{l}^{(i)}}(1-\th
 We derive the M-step update formulae for parameters $\lambda$ and
 $\theta$.
 
-The M-step maximises $F(q,\lambda,\theta)$ with respect to $(\lambda,\theta)$:
+The M-step maximises $F(q,\lambda,\theta)$ with respect to
+$(\lambda,\theta)$:
 
 $$
 F(q,\lambda,\theta) =E_{q}[l_{hid}(\lambda,\theta)] - E_{q}[\log(q(Z))]
 $$
 
-$E_{q}[\log(q(Z))$ is a constant with respect to $(\lambda,\theta)$, and thus can be ignored. Therefore, the M-step update formulae can be derived by maximising $E_{q}[l_{hid}(\lambda,\theta)]$ with respect to $(\lambda,\theta)$. Since $\lambda$ and $\theta$ are separate parameters, we maximise it separately:
+$E_{q}[\log(q(Z))$ is a constant with respect to $(\lambda,\theta)$, and
+thus can be ignored. Therefore, the M-step update formulae can be
+derived by maximising $E_{q}[l_{hid}(\lambda,\theta)]$ with respect to
+$(\lambda,\theta)$. Since $\lambda$ and $\theta$ are separate
+parameters, we maximise them separately:
 
 $$
 E_q\!\left[l_{\mathrm{hid}}(\lambda,\theta)\right]
@@ -125,9 +129,8 @@ E_q\!\left[l_{\mathrm{hid}}(\lambda,\theta)\right]
 Q_{\lambda}(\lambda) + Q_{\theta}(\theta)
 $$
 
-For a motif mixture model, as
-shown in the lectures, the complete data likelihood can be further
-simplified to:
+For a motif mixture model, as shown in the lectures, the complete data
+likelihood can be further simplified to:
 $$ E_{q}[l_{hid}(\lambda,\theta)] = \sum_{i,k}\gamma_{ik}\log(\lambda_k) + \sum_{i,k}\gamma_{ik}\log(P(X^{(i)}|\theta_k)) $$
 Maximisation with respect to the $\lambda_k$ involves only the left sum
 term.
@@ -151,8 +154,7 @@ The right sum becomes
 $$\sum_{i,k}\gamma_{ik}\log(P(X^{(i)}|\theta_k)) = \sum_{i=1}^N \sum_{k=1}^{2} \gamma_{ik}\log(P(X^{(i)}|\theta_k)) = \sum_{i=1}^N \sum_{k=1}^{2}\gamma_{ik}\log\left(\prod_{l = 1}^{L}\theta_{k}^{X_{l}^{(i)}}(1-\theta_{k})^{\left(1 - X_{l}^{(i)}\right)}\right) =$$
 $$ \sum_{i=1}^N \sum_{k=1}^{2} \gamma_{ik}\sum_{l = 1}^{L}\left(X_{l}^{(i)}\log(\theta_{k})+(1 - X_{l}^{(i)})\log(1-\theta_{k})\right)$$
 
-For convenience, define the objective
-$$
+For convenience, define the objective $$
 f(\theta)
 =
 \sum_{i=1}^{N}\sum_{k=1}^{2}\gamma_{ik}\sum_{l=1}^{L}\left(
@@ -160,9 +162,11 @@ X_{l}^{(i)}\log(\theta_{k})+(1-X_{l}^{(i)})\log(1-\theta_{k})
 \right)
 $$
 
-To find the optimal $\theta_k$, we set the partial derivative with respect to $\theta_k$ equal to zero.
-When differentiating w.r.t. $\theta_k$, the terms with $k' \neq k$ do not depend on $\theta_k$ and their derivative is zero.
-Therefore, only the $k$-th component term contributes:
+To find the optimal $\theta_k$, we set the partial derivative with
+respect to $\theta_k$ equal to zero. When differentiating w.r.t.
+$\theta_k$, the terms with $k' \neq k$ do not depend on $\theta_k$ and
+their derivative is zero. Therefore, only the $k$-th component term
+contributes:
 
 $$
 0
