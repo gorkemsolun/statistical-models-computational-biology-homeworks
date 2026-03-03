@@ -62,10 +62,10 @@ using the EM algorithm.
 
 Let us define binary hidden variables $Z^{(ik)}$, where $Z^{(ik)} = 1$
 if and only if $X^{(i)}$ is generated from component $k$. We write down
-the complete-data log-likelihood $\log P(X, Z | \lambda, \theta)$ in
+the complete-data log-likelihood $\log P(X,Z|\lambda,\theta)$ in
 terms of $X^{(i)}$, $Z^{(i)}$, $\lambda$, and $\theta$:
 
-$$\log(P(X,Z|\lambda,\theta)) = \sum_{i = 1}^{N}\log(P(X^{(i)},Z^{(i)}|\lambda,\theta) = \sum_{i = 1}^{N}\sum_{k = 1}^{2}Z^{(ik)}\log(\lambda_{k}P(X^{(i)}|\theta_{k}))$$
+$$\log(P(X,Z|\lambda,\theta)) = \sum_{i = 1}^{N}\log(P(X^{(i)},Z^{(i)} | \lambda,\theta) = \sum_{i = 1}^{N}\sum_{k = 1}^{2}Z^{(ik)}\log(\lambda_{k}P(X^{(i)}|\theta_{k}))$$
 $P(X^{(i)}|\theta_k)$ follows a Bernoulli distribution with probability
 $\theta$ for each position up to $L$:
 $$ P(X^{(i)}|\theta_{k}) = \prod_{l = 1}^{L}\theta_{k}^{X_{l}^{(i)}}(1-\theta_{k})^{\left(1 - X_{l}^{(i)}\right)}$$
@@ -89,11 +89,11 @@ $$
 
 Let us define the responsibility of component $k$ for observation $i$ as
 the posterior probability that $Z^{(ik)}$ is 1:
-$$\gamma_{ik} := P(Z^{(ik)} = 1 \mid X^{(i)}, \lambda, \theta).$$ We
-express $\gamma_{ik}$ in terms of $X^{(i)}$, $\lambda$, and $\theta$.
+$$\gamma_{ik} := P(Z^{(ik)} = 1|X^{(i)},\lambda,\theta).$$ Express $\gamma_{ik}$ in terms of $X^{(i)}$, $\lambda$, and $\theta$.
 
-$$\gamma_{ik} = P(Z^{(ik)}=1|X^{(i)},\lambda,\theta)$$ Using Bayes
-theorem: $$ P(G|C) = \frac{P(G)P(C|G)}{P(C)}$$ Resulting in:
+Using Bayes theorem:
+$$ P(G|C) = \frac{P(G)P(C|G)}{P(C)}$$
+Resulting in:
 $$ P(Z^{(ik)}=1|X^{(i)},\lambda,\theta) = \frac{P(Z^{(ik)}=1|\lambda)P(X^{(i)}|Z^{(ik)}=1,\theta)}{P(X^{(i)}|\lambda,\theta)} $$
 Substituting the model components prior probability:
 $$ P(Z^{(ik)}=1|\lambda) = \lambda_k $$ and likelihood:
