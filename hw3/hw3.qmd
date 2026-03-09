@@ -96,7 +96,7 @@ $$ =-0.5 + \max \begin{cases} -2.55  -0.5 \\ -2.75 - 0.2 \end{cases} = -0.5 + \m
 
 $$ P_{NC-Region}(C,4) = E_{NC-Region,A} + \max \begin{cases} P_{NC-Region}(A,3) + T_{NC-Region,NC-Region}\\ P_{C-Region}(A,3)+T_{C-Region,NC-Region} \end{cases} $$
 
-$$ =-0.2 + \max \begin{cases} -2.75  -0.4 \\ -2.55 - 0.15 \end{cases} = -0.2 + \max \begin{cases} -3.25 \\ -2.70 \end{cases} = -2.9 $$
+$$ =-0.2 + \max \begin{cases} -2.75  -0.4 \\ -2.55 - 0.15 \end{cases} = -0.2 + \max \begin{cases} -3.15 \\ -2.70 \end{cases} = -2.9 $$
 
 $P_{C-Region}(C,4)$ comes from position 3 NC-region.
 $P_{NC-Region}(C,4)$ comes from position 3 C-region.
@@ -236,6 +236,10 @@ proteins_test_result <- viterbi(
   p = proteins_test_pred
 )
 
+# proteins_test_result as tsv file
+write.table(proteins_test_result, file="proteins_test_pred.tsv", 
+            quote=FALSE, sep="\t", col.names = FALSE, row.names = FALSE)
+
 # for proteins_new
 proteins_new_pred <- proteins_new
 colnames(proteins_new_pred) <- c("ProteinID","AminoAcids")
@@ -252,6 +256,105 @@ write.table(proteins_new_result, file="proteins_new_pred.tsv",
             quote=FALSE, sep="\t", col.names = FALSE, row.names = FALSE)
 ```
 
-### (7e) Confidence intervals
+### (7e) Confidence intervals via bootstrapping
+
+```{r}
+B <- 1000
+n_proteins <- nrow(proteins_train)
+
+I_boot <- array(0, dim = c(length(ss_codes), 1, B), dimnames = list(ss_codes, "Init", NULL))
+T_boot <- array(0, dim = c(length(ss_codes), length(ss_codes), B), dimnames = list(ss_codes, ss_codes, NULL))
+E_boot <- array(0, dim = c(length(ss_codes), length(aa_codes), B), dimnames = list(ss_codes, aa_codes, NULL))
+
+set.seed(42)
+
+for (b in 1:B) {
+  # Sample with replacement
+  resampled_indices <- sample(1:n_proteins, n_proteins, replace = TRUE)
+  boot_data <- proteins_train[resampled_indices, ]
+  
+  # Initialize counts for this bootstrap iteration
+  I_counts <- matrix(0, nrow = length(ss_codes), ncol = 1, dimnames = list(ss_codes, "Init"))
+  T_counts <- matrix(0, nrow = length(ss_codes), ncol = length(ss_codes), dimnames = list(ss_codes, ss_codes))
+  E_counts <- matrix(0, nrow = length(ss_codes), ncol = length(aa_codes), dimnames = list(ss_codes, aa_codes))
+  
+  # Calculate counts (similar to 7b)
+  for (protein in 1:n_proteins) {
+    aa_seq <- boot_data$`Amino acid sequence`[protein]
+    ss_seq <- boot_data$`Secondary structure code`[protein]
+    
+    first_ss <- substr(ss_seq, 1, 1)
+    I_counts[first_ss, ] <- I_counts[first_ss, ] + 1
+    
+    l_seq <- nchar(aa_seq)
+    if (l_seq > 0) {
+      # Split strings into vectors of characters for faster access
+      aa_split <- strsplit(aa_seq, "")[[1]]
+      ss_split <- strsplit(ss_seq, "")[[1]]
+      
+      for (N in 1:l_seq) {
+        # Emission counts
+        E_counts[ss_split[N], aa_split[N]] <- E_counts[ss_split[N], aa_split[N]] + 1
+        
+        # Transition counts
+        if (N > 1) {
+          T_counts[ss_split[N-1], ss_split[N]] <- T_counts[ss_split[N-1], ss_split[N]] + 1
+        }
+      }
+    }
+  }
+  
+  # Calculate probabilities and store them in the b-th slice of the array
+  I_boot[, , b] <- I_counts / sum(I_counts)
+  
+  # Handle potential division by zero if a state never appears in a bootstrap sample
+  row_sums_E <- rowSums(E_counts)
+  E_boot[, , b] <- ifelse(row_sums_E == 0, 0, E_counts / row_sums_E)
+
+  row_sums_T <- rowSums(T_counts)
+  T_boot[, , b] <- ifelse(row_sums_T == 0, 0, T_counts / row_sums_T)
+}
+
+# Compute the empirical 95% confidence intervals (2.5% and 97.5% quantiles)
+# We use the apply() function over the 1st and 2nd dimensions (rows and columns)
+I_lower <- apply(I_boot, c(1, 2), quantile, probs = 0.025, na.rm = TRUE)
+I_upper <- apply(I_boot, c(1, 2), quantile, probs = 0.975, na.rm = TRUE)
+
+T_lower <- apply(T_boot, c(1, 2), quantile, probs = 0.025, na.rm = TRUE)
+T_upper <- apply(T_boot, c(1, 2), quantile, probs = 0.975, na.rm = TRUE)
+
+E_lower <- apply(E_boot, c(1, 2), quantile, probs = 0.025, na.rm = TRUE)
+E_upper <- apply(E_boot, c(1, 2), quantile, probs = 0.975, na.rm = TRUE)
+
+# To verify
+print(I_lower)
+print(I_upper)
+```
 
 ### (7f) Accuracy of predictions
+
+```{r}
+
+n_test_proteins <- nrow(proteins_test_result)
+accuracies <- numeric(n_test_proteins)
+
+for (i in 1:n_test_proteins) {
+  
+  real_seq <- proteins_test_result[i, 3] 
+  pred_seq <- proteins_test_result[i, 4] 
+  
+  real_chars <- strsplit(real_seq, "")[[1]]
+  pred_chars <- strsplit(pred_seq, "")[[1]]
+  
+  L_seq <- length(real_chars)
+  
+  if (L_seq > 0) {
+    matches <- sum(real_chars == pred_chars)
+    accuracies[i] <- matches / L_seq
+  } else {
+    accuracies[i] <- NA # Handle edge case if a sequence is completely empty
+  }
+}
+
+summary(accuracies)
+```
