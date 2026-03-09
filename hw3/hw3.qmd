@@ -197,7 +197,8 @@ independent of the initial distribution $I$. In our situation:
 $$ \sum_{k = 1}^{8} \pi_{k} = 1 $$
 
 In matrix notation, $\pi$ is the solution of $\pi^t = \pi^t T$. $\pi$ is
-the eigenvector of T when with an eigenvalue of 1.
+the eigenvector of the transpose of T corresponding to an eigenvalue of
+1.
 
 ```{r}
 decomposed_T <- eigen(t(T))
