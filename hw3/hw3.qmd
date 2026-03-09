@@ -13,8 +13,7 @@ editor_options:
 
 ```{r}
 set.seed(42)
-library(patchwork)
-library(ggplot2)
+
 ```
 
 ## (6) Identify the most likely coding versus non-coding composition of a given DNA sequence
@@ -96,8 +95,8 @@ $$ =-0.2 + \max \begin{cases} -2.75  -0.4 \\ -2.55 - 0.15 \end{cases} = -0.2 + \
 $P_{C-Region}(C,4)$ comes from position 3 NC-region.
 $P_{NC-Region}(C,4)$ comes from position 3 C-region.
 
-The resulting Viterbi quantities, ($log_{10}$-transformed probabilities) are
-summarised in the table below.
+The resulting Viterbi quantities, ($log_{10}$-transformed probabilities)
+are summarised in the table below.
 
 |           | T     | A     | A     | C     |
 |-----------|-------|-------|-------|-------|
@@ -113,276 +112,139 @@ The pointers (previous state visited) are summarised in the table below.
 
 ### (6b) The most likely hidden path
 
-The state in the last position, where C is observed, with the highest probability is NC-Region, with a probability of -2.9. Using the pointers summarised in the previous tables, the resulting shortest path is: C, NC, C, NC, or more precisely summarised in table format below:
+The state in the last position, where C is observed, with the highest
+probability is NC-Region, with a probability of -2.9. Using the pointers
+summarised in the previous tables, the resulting shortest path is: C,
+NC, C, NC, or more precisely summarised in table format below:
 
-|Shortest path           | Position 1| Position 2|Position 3|Position 4|
-|-----------|-------|-------|-------|-------|
-| Hidden variable state  | C-Region | NC-Region | C-Region | NC-Region |
+| Shortest path         | Position 1 | Position 2 | Position 3 | Position 4 |
+|-----------------------|------------|------------|------------|------------|
+| Hidden variable state | C-Region   | NC-Region  | C-Region   | NC-Region  |
 
 ## (7) Predicting protein secondary structure using HMMs
 
 ### (7a) Reading and storing data
 
-Complete the implementation of the EM algorithm in the code skeleton.
-Note: Beware of numerical instability when multiplying large amount of
-numbers together – do additions of logarithms whenever possible.
-
-Please write your code in the indicated blocks.
+Saving the tab-delimited files as dataframes
 
 ```{r}
-##' This function implements the EM algorithm for the gene mutation problem
-##' @param D Data matrix of dimensions N-by-100, where N is the number of observations
-##' @param k Number of cell groups
-##' @param lambda Vector of mixture weights
-##' @param theta Vector of probabilities of mutations
-##' @param tolerance A threshold used to check convergence
-mutation_EM <- function(D, k, lambda, theta, tolerance = 1e-2) {
-  
-  # observed log-likelihood
-  ll_obs <- -Inf
-  # difference between two iterations
-  diff <- Inf
-  # number of observations
-  N <- nrow(D)
-  # number of positions
-  L <- ncol(D)
-  # responsibilities
-  gamma <- matrix(0, nrow = k, ncol = N)
-  # keep track of lambda and theta during the optimization
-  lambda_all <- lambda
-  theta_all <- theta
-  # iteration number
-  t <- 1
+setwd("~/My Documents/Carlo/ETH UBas UZH - MSc CBB/636-0702-00L Statistical Models in Computational Biology/Homeworks_GitHub_Linked")
 
-  # run the E-step and M-step until convergence 
-  while (diff > tolerance) {
-    
-    ############# E-step #############
-    
-    ### YOUR CODE STARTS ###
-    
-    # Compute the responsibilities using log-space to avoid underflow
-    # For each observation i and component j, compute
-    # log(lambda_j) + sum_l [ X_l^(i) * log(theta_j) + (1 - X_l^(i)) * log(1 - theta_j) ]
-    log_rho <- matrix(0, nrow = k, ncol = N)
-    for (j in 1:k) {
-      # Sum of X_l * log(theta_j) + (1-X_l) * log(1-theta_j) for each observation
-      log_lik <- D %*% rep(log(theta[j]), L) + (1 - D) %*% rep(log(1 - theta[j]), L)
-      # log(lambda_j) + log(P(X^(i) | theta_j))
-      log_rho[j, ] <- log(lambda[j]) + as.vector(log_lik)
-    }
-    
-    # Normalise responsibilities using log-sum-exp trick
-    log_sum <- apply(log_rho, 2, function(x) {
-      m <- max(x)
-      m + log(sum(exp(x - m)))
-    })
-    for (j in 1:k) {
-      gamma[j, ] <- exp(log_rho[j, ] - log_sum)
-    }
-
-    # Update observed log-likelihood
-    # ll_obs_new = sum_i log( sum_j lambda_j * P(X^(i) | theta_j) )
-    ll_obs_new <- sum(log_sum)
-    ll_obs <- c(ll_obs, ll_obs_new) 
-    # keep track of ll_obs throughout iterations
-
-    # Recompute difference between two iterations
-    diff <- abs(ll_obs[t] - ll_obs[t+1])
-
-    
-    ############# M-step #############
-    
-    # Recompute priors (mixture weights)
-    # lambda_j^new = sum_i gamma_ij / N
-    for (j in 1:k) {
-      lambda[j] <- sum(gamma[j, ]) / N
-    }
-
-    lambda_all <- rbind(lambda_all, lambda)
-    # keep track of lambda throughout iterations
-    
-    # Recompute probability of mutation for each cell group
-    # theta_j^new = sum_i gamma_ij * sum_l X_l^(i) / (L * sum_i gamma_ij)
-    for (j in 1:k) {
-      numerator <- sum(gamma[j, ] * rowSums(D))
-      denominator <- L * sum(gamma[j, ])
-      theta[j] <- numerator / denominator
-    }
-    
-    theta_all <- rbind(theta_all, theta)
-    # keep track of theta throughout iterations
-
-    t <- t+1
-  }
-  ### YOUR CODE ENDS ###
-  
-  return(list(ll_obs = ll_obs, lambda = lambda, theta = theta, gamma = gamma, 
-              lambda_all = lambda_all, theta_all = theta_all))
-  
-}
+proteins_train <- read.delim("hw3/exercise/data/proteins_train.tsv",sep="\t", header = FALSE)
+proteins_test <- read.delim("hw3/exercise/data/proteins_test.tsv",sep="\t", header = FALSE)
+proteins_new <- read.delim("hw3/exercise/data/proteins_new.tsv",sep="\t", header = FALSE)
 ```
 
-### (7b) The vector of initial state probabilities I
-
-Use the given code to read in the data stored in the file
-‘mutations.csv’, and to initialize the mixture weights λ and the
-mutation probabilities θ. We assume a priori that the mixture weights
-are uniform, and θ_1 \> θ_2. Run the completed EM algorithm on this
-data.
+Renaming the columns.
 
 ```{r}
-# read the data into D
-D <- read.csv("mutations.csv")
-D <- as.matrix(D)
-# check the dimension of D
-all(dim(D) == c(200, 100))
+colnames(proteins_train) <- c("Protein ID","Amino acid sequence","Secondary structure code")
+colnames(proteins_test) <- c("Protein ID","Amino acid sequence","Secondary structure code")
+colnames(proteins_new) <- c("Protein ID","Amino acid sequence")
+```
 
-# number of cell groups
-k <- 2
-# mixture weights (a vector of length k)
-lambda <- c(0.5, 0.5)
-# probabilities of mutation (having a 1 in the data) (a vector of length k)
-theta <- c(0.6, 0.4)
+### (7b) Initial state probabilities (I), transition probabilities (T) and emission probababilities (E)
 
-# run the EM algorithm
-res <- mutation_EM(D, k, lambda, theta)
+```{r}
+L <- nrow(proteins_train)
+
+aa_codes <- c("A","C","D","E","F","G","H","I","K","L","M","N","P","Q","R","S","T","U","V","W","X","Y")
+  
+ss_codes <- c("B","C","E","G","H","I","S","T")
+
+I_counts <- matrix(0, nrow = length(ss_codes), ncol = 1, dimnames = list(ss_codes))
+T_counts <- matrix(0, nrow = length(ss_codes),ncol = length(ss_codes),dimnames = list(ss_codes,ss_codes))
+E_counts <- matrix(0, nrow = length(ss_codes),ncol = length(aa_codes),dimnames = list(ss_codes,aa_codes))
+
+for (protein in 1:L) {
+ 
+  aa_seq <- proteins_train$`Amino acid sequence`[protein]
+  ss_seq <- proteins_train$`Secondary structure code`[protein]
+  
+  # initialization counts, C is the secondary structure of the first amino acid
+  first_ss <- substr(ss_seq,1,1)
+  I_counts[first_ss,] <- I_counts[first_ss,] + 1
+  
+  l_seq = nchar(aa_seq)
+  
+  for (N in 1:l_seq) {
+    aa_N <- substr(aa_seq,N,N)
+    ss_N <- substr(ss_seq,N,N)
+    
+    # emission counts
+    E_counts[ss_N,aa_N] <- E_counts[ss_N,aa_N] + 1
+    
+    #transmission counts
+    if (N != 1) {
+      T_counts[prev_ss_N,ss_N] <- T_counts[prev_ss_N,ss_N] + 1
+    }
+    prev_ss_N <- ss_N
+  }
+}
+
+I <- I_counts/sum(I_counts)
+E <- E_counts/rowSums(E_counts)
+T <- T_counts/rowSums(T_counts)
 ```
 
 ### (7c) The stationary distribution $\pi$
 
-Plot the following quantities (y-axis) as a function of the number of
-iterations (x-axis) in three separate plots: • the observed
-log-likelihood (recall that this is computed by marginalizing out the
-hidden variables) • the mutation probabilities θ_1 and θ_2, and • the
-mixture weights λ_1 and λ_2.
+An ergodic Markov chain has a unique stationary distribution
+$\pi = (\pi_l)_{l \in [K]}$ such that
 
-Observed log-likelihood throughout iterations:
+$$\lim_{n \to \infty} T_{kl}^n = \pi_l = \sum_{k \in [K]} \pi_k T_{kl}, \quad l \in [K], \quad \sum_{l \in [K]} \pi_l = 1$$
 
-```{r}
-# Remove the initial -Inf for plotting
-ll_data <- data.frame(
-  Iteration = 1:(length(res$ll_obs) - 1),
-  LogLikelihood = res$ll_obs[-1]
-)
+independent of the initial distribution $I$.
 
-ggplot(ll_data, aes(x = Iteration, y = LogLikelihood)) +
-  geom_line() +
-  geom_point(size = 1.5) +
-  labs(title = "Observed Log-Likelihood Convergence",
-       x = "Iteration", y = "Observed Log-Likelihood") +
-  theme_light()
-```
-
-Probabilities of mutation throughout iterations:
+In matrix notation, $\pi$ is the solution of $\pi^t = \pi^t T$. $\pi$ is the eigenvector of T when with an eigenvalue of 1.
 
 ```{r}
-theta_data <- data.frame(
-  Iteration = 0:(nrow(res$theta_all) - 1),
-  Theta1 = res$theta_all[, 1],
-  Theta2 = res$theta_all[, 2]
-)
-theta_long <- rbind(
-  data.frame(Iteration = theta_data$Iteration, Component = "Theta1", Theta = theta_data$Theta1),
-  data.frame(Iteration = theta_data$Iteration, Component = "Theta2", Theta = theta_data$Theta2)
-)
+decomposed_T <- eigen(T)
+idx_value1 <- match(1,decomposed_T$values)
+vector_value1 <- decomposed_T$vectors[,idx_value1]
 
-ggplot(theta_long, aes(x = Iteration, y = Theta, color = Component)) +
-  geom_line() +
-  geom_point(size = 1.5) +
-  labs(title = "Mutation Probabilities Throughout Iterations",
-       x = "Iteration", y = expression(theta)) +
-  scale_color_manual(values = c("Theta1" = "red", "Theta2" = "blue"),
-                     labels = c(expression(theta[1]~"(mutated)"),
-                                expression(theta[2]~"(wild-type)"))) +
-  theme_light()
+pi <- vector_value1/sum(vector_value1)
 ```
+The stationary distribution $\pi$ has an equal probability of 0.125 among all 8 hidden states (secondary structures).
 
-Mixture weights throughout iterations:
+### (7d) The latent state sequence Z using Viterbi algorithm
 
 ```{r}
-lambda_data <- data.frame(
-  Iteration = 0:(nrow(res$lambda_all) - 1),
-  Lambda1 = res$lambda_all[, 1],
-  Lambda2 = res$lambda_all[, 2]
-)
-lambda_long <- rbind(
-  data.frame(Iteration = lambda_data$Iteration, Component = "Lambda1", Lambda = lambda_data$Lambda1),
-  data.frame(Iteration = lambda_data$Iteration, Component = "Lambda2", Lambda = lambda_data$Lambda2)
-)
+setwd("~/My Documents/Carlo/ETH UBas UZH - MSc CBB/636-0702-00L Statistical Models in Computational Biology/Homeworks_GitHub_Linked")
 
-ggplot(lambda_long, aes(x = Iteration, y = Lambda, color = Component)) +
-  geom_line() +
-  geom_point(size = 1.5) +
-  labs(title = "Mixture Weights Throughout Iterations",
-       x = "Iteration", y = expression(lambda)) +
-  scale_color_manual(values = c("Lambda1" = "red", "Lambda2" = "blue"),
-                     labels = c(expression(lambda[1]~"(mutated)"),
-                                expression(lambda[2]~"(wild-type)"))) +
-  ylim(0, 1) +
-  theme_light()
-```
+source("./hw3/exercise/code/viterbi.r")
 
-### (7d) The latent state sequence Z
+log_I <- log(I)
+log_T <- log(T)
+log_E <- log(E)
 
-Plot a heatmap of the responsibilities γ at the final step, where
-columns are sequences, rows are components, and values indicate the
-responsibility of component k for X\^(i). For each cell, we assign it to
-the component with higher probability. How many cells belong to the
-mutated group, and how many cells belong to the wild-type group?
+# for proteins_test
+proteins_test_pred <- proteins_test
+colnames(proteins_test_pred) <- c("ProteinID","AminoAcids","SecondaryStructure")
 
-Heatmap of responsibilities:
-
-```{r}
-# gamma is k x N; rows = components, columns = sequences
-# Sort cells by responsibility to the mutated component for clearer visualization
-cell_order <- order(res$gamma[1, ], decreasing = TRUE)
-gamma_sorted <- res$gamma[, cell_order]
-
-resp_data <- rbind(
-  data.frame(Component = "Mutated", Cell = 1:ncol(gamma_sorted),
-             Responsibility = gamma_sorted[1, ]),
-  data.frame(Component = "Wild-type", Cell = 1:ncol(gamma_sorted),
-             Responsibility = gamma_sorted[2, ])
+proteins_test_result <- viterbi(
+  E = log_E,
+  Tr = log_T,
+  I = log_I,
+  p = proteins_test_pred
 )
 
-ggplot(resp_data, aes(x = Cell, y = Component, fill = Responsibility)) +
-  geom_tile() +
-  scale_fill_gradient(low = "blue", high = "red",
-                      name = expression(gamma[ik])) +
-  labs(title = "Responsibilities at Final Iteration (sorted by mutated responsibility)",
-       x = "Cell Index (sorted)", y = "Component") +
-  theme_minimal()
-```
+# for proteins_new
+proteins_new_pred <- proteins_new
+colnames(proteins_new_pred) <- c("ProteinID","AminoAcids")
 
-```{r}
-# gamma is k x N; rows = components, columns = sequences
-resp_data <- rbind(
-  data.frame(Component = "Mutated", Cell = 1:ncol(gamma_sorted),
-             Responsibility = res$gamma[1, ]),
-  data.frame(Component = "Wild-type", Cell = 1:ncol(gamma_sorted),
-             Responsibility = res$gamma[2, ])
+proteins_new_result <- viterbi(
+  E = log_E,
+  Tr = log_T,
+  I = log_I,
+  p = proteins_new_pred
 )
 
-ggplot(resp_data, aes(x = Cell, y = Component, fill = Responsibility)) +
-  geom_tile() +
-  scale_fill_gradient(low = "blue", high = "red",
-                      name = expression(gamma[ik])) +
-  labs(title = "Responsibilities at Final Iteration (not sorted by mutated responsibility)",
-       x = "Cell Index", y = "Component") +
-  theme_minimal()
+# protein_new_result as tsv file
+write.table(proteins_new_result, file="./hw3/proteins_new_pred.tsv", 
+            quote=FALSE, sep="\t", col.names = FALSE, row.names = FALSE)
 ```
 
-How many cells belong to the mutated group, and how many cells belong to
-the wild-type group?
-
-```{r}
-# Assign each cell to the component with the highest responsibility
-n_mutated <- sum(res$gamma[1, ] > 0.5)
-n_wildtype <- sum(res$gamma[1, ] <= 0.5)
-cat("Number of cells in the mutated group:", n_mutated, "\n")
-cat("Number of cells in the wild-type group:", n_wildtype, "\n")
-```
 
 ### (7e) Confidence intervals
 
