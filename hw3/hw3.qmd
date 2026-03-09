@@ -1,6 +1,13 @@
 ---
 title: "Homework 3: Markov chains and hidden Markov models"
-author: "Bernhard Buss, Dario Franzen, Aurimas Greicius, Timothy Lauren Nijhuis, Carlo Rossetto, Yuliyan Slavchev and Görkem Kadir Solun"
+author:
+  - Bernhard Buss
+  - Dario Franzen
+  - Aurimas Greicius
+  - Timothy Lauren Nijhuis
+  - Carlo Rossetto
+  - Yuliyan Slavchev
+  - Görkem Kadir Solun
 format: pdf
 device: "cairo_pdf"
 
@@ -127,11 +134,9 @@ NC, C, NC, or more precisely summarised in table format below:
 Saving the tab-delimited files as dataframes
 
 ```{r}
-setwd("~/My Documents/Carlo/ETH UBas UZH - MSc CBB/636-0702-00L Statistical Models in Computational Biology/Homeworks_GitHub_Linked")
-
-proteins_train <- read.delim("hw3/exercise/data/proteins_train.tsv",sep="\t", header = FALSE)
-proteins_test <- read.delim("hw3/exercise/data/proteins_test.tsv",sep="\t", header = FALSE)
-proteins_new <- read.delim("hw3/exercise/data/proteins_new.tsv",sep="\t", header = FALSE)
+proteins_train <- read.delim("exercise/data/proteins_train.tsv",sep="\t", header = FALSE)
+proteins_test <- read.delim("exercise/data/proteins_test.tsv",sep="\t", header = FALSE)
+proteins_new <- read.delim("exercise/data/proteins_new.tsv",sep="\t", header = FALSE)
 ```
 
 Renaming the columns.
@@ -214,7 +219,7 @@ print((pi_matrix))
 ### (7d) The latent state sequence Z using Viterbi algorithm
 
 ```{r}
-source("./hw3/exercise/code/viterbi.r")
+source("exercise/code/viterbi.r")
 
 log_I <- log(I)
 log_T <- log(T)
@@ -243,7 +248,7 @@ proteins_new_result <- viterbi(
 )
 
 # protein_new_result as tsv file
-write.table(proteins_new_result, file="./hw3/proteins_new_pred.tsv", 
+write.table(proteins_new_result, file="proteins_new_pred.tsv", 
             quote=FALSE, sep="\t", col.names = FALSE, row.names = FALSE)
 ```
 
