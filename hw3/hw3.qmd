@@ -1,6 +1,6 @@
 ---
 title: "Homework 3: Markov chains and hidden Markov models"
-author: "Bernhard Buss, Timothy Lauren Nijhuis, Carlo Rossetto and Görkem Kadir Solun"
+author: "Bernhard Buss, Dario Franzen, Aurimas Greicius, Timothy Lauren Nijhuis, Carlo Rossetto, Yuliyan Slavchev and Görkem Kadir Solun"
 format: pdf
 device: "cairo_pdf"
 
@@ -13,7 +13,6 @@ editor_options:
 
 ```{r}
 set.seed(42)
-
 ```
 
 ## (6) Identify the most likely coding versus non-coding composition of a given DNA sequence
@@ -194,24 +193,26 @@ $\pi = (\pi_l)_{l \in [K]}$ such that
 
 $$\lim_{n \to \infty} T_{kl}^n = \pi_l = \sum_{k \in [K]} \pi_k T_{kl}, \quad l \in [K], \quad \sum_{l \in [K]} \pi_l = 1$$
 
-independent of the initial distribution $I$.
+independent of the initial distribution $I$. In our situation:
+$$ \sum_{k = 1}^{8} \pi_{k} = 1 $$
 
-In matrix notation, $\pi$ is the solution of $\pi^t = \pi^t T$. $\pi$ is the eigenvector of T when with an eigenvalue of 1.
+In matrix notation, $\pi$ is the solution of $\pi^t = \pi^t T$. $\pi$ is
+the eigenvector of T when with an eigenvalue of 1.
 
 ```{r}
-decomposed_T <- eigen(T)
-idx_value1 <- match(1,decomposed_T$values)
+decomposed_T <- eigen(t(T))
+idx_value1 <- which.min(abs(decomposed_T$values - 1))
 vector_value1 <- decomposed_T$vectors[,idx_value1]
 
 pi <- vector_value1/sum(vector_value1)
+
+pi_matrix = matrix(pi, dimnames = list(ss_codes))
+print((pi_matrix))
 ```
-The stationary distribution $\pi$ has an equal probability of 0.125 among all 8 hidden states (secondary structures).
 
 ### (7d) The latent state sequence Z using Viterbi algorithm
 
 ```{r}
-setwd("~/My Documents/Carlo/ETH UBas UZH - MSc CBB/636-0702-00L Statistical Models in Computational Biology/Homeworks_GitHub_Linked")
-
 source("./hw3/exercise/code/viterbi.r")
 
 log_I <- log(I)
@@ -244,7 +245,6 @@ proteins_new_result <- viterbi(
 write.table(proteins_new_result, file="./hw3/proteins_new_pred.tsv", 
             quote=FALSE, sep="\t", col.names = FALSE, row.names = FALSE)
 ```
-
 
 ### (7e) Confidence intervals
 
