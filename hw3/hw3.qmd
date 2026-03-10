@@ -186,6 +186,7 @@ for (protein in 1:L) {
   }
 }
 
+# maximum likelihood estimates
 I <- I_counts/sum(I_counts)
 E <- E_counts/rowSums(E_counts)
 T <- T_counts/rowSums(T_counts)
@@ -381,3 +382,7 @@ for (i in 1:n_test_proteins) {
 
 summary(accuracies)
 ```
+
+The accuracies vary significantly across the protein sequences, from
+around 0% (min) to 86 % (maximum). The median and mean of 32% indicate
+there is room for improvement.
