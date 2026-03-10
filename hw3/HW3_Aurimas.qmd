@@ -1,0 +1,302 @@
+---
+title: "Hw3"
+format: html
+editor: visual
+---
+
+## Problem 7
+
+\(a\) Read proteins train.tsv, proteins test.tsv and proteins new.tsv into the memory and store each in a data.frame.
+
+```{r}
+library(readr)
+library(dplyr)
+
+proteins_train <- read_tsv("~/Desktop/StatsModelsCompBio/Week3/SMCB Markov Models Homework/exercise/data/proteins_train.tsv", col_names=FALSE)
+proteins_test <- read_tsv("~/Desktop/StatsModelsCompBio/Week3/SMCB Markov Models Homework/exercise/data/proteins_test.tsv", col_names=FALSE)
+proteins_new <- read_tsv("~/Desktop/StatsModelsCompBio/Week3/SMCB Markov Models Homework/exercise/data/proteins_new.tsv", col_names=FALSE)
+
+states_vocab <- c("B", "C", "E", "G", "H", "I", "S", "T")
+amino_vocab <- c("A", "C", "D", "E", "F", "G", "H", "I", "K", "L", "M", "N", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y")
+```
+
+\(b\) Estimate the vector of initial state probabilities I, the matrix of transition probabilities T and the matrix for emission probabilities E by using maximum likelihood, i.e., by counting how often each transition and each emission happened and how often each secondary structure was found at the beginning of a protein, respectively.
+
+```{r}
+
+# For estimating initial probabilities, we can simply count of starting letter / total seqs to get the probabilistic estimate:
+
+# amino_vocab
+# states_vocab
+# proteins_train$X3
+
+# Create a dictionary
+states_dict <- setNames(rep(0, length(states_vocab)), states_vocab)
+
+# Loop over each sequence in the dataset
+for (seq in proteins_train$X3) {
+  
+  # Extract just the very first character of the sequence
+  first_char <- substr(seq, 1, 1)
+  
+  # Add 1 to the corresponding dictionary entry
+  if (first_char %in% names(states_dict)) {
+    states_dict[first_char] <- states_dict[first_char] + 1
+  }
+}
+
+# Divide all entries by total sum to get probabilities
+initial_probs <- states_dict / sum(states_dict)
+
+print("Initial Probabilities (I):")
+print(initial_probs)
+
+# For emissions, we calculate the X3 -> X2 counts, divide by total count for that specific state to get prob.
+
+E_counts <- matrix(0, nrow = length(states_vocab), ncol = length(amino_vocab))
+rownames(E_counts) <- states_vocab
+colnames(E_counts) <- amino_vocab
+
+# For transitions, for each sequence we check X3_n -> X3_n+1 counts, divide by total count for that specific state
+
+T_counts <- matrix(0, nrow = length(states_vocab), ncol = length(states_vocab))
+rownames(T_counts) <- states_vocab # Current state
+colnames(T_counts) <- states_vocab # Next state
+
+# Loop over every sequence in your dataset
+for (i in 1:nrow(proteins_train)) {
+  
+  # Split the sequences into individual characters
+  state_seq <- strsplit(proteins_train$X3[i], "")[[1]]
+  obs_seq   <- strsplit(proteins_train$X2[i], "")[[1]] 
+  
+  # --- EMISSIONS COUNTING ---
+  for (n in 1:length(state_seq)) {
+    s <- state_seq[n] # Current state
+    o <- obs_seq[n]   # Current observation (amino acid)
+    E_counts[s, o] <- E_counts[s, o] + 1
+  }
+  
+  # --- TRANSITIONS COUNTING ---
+  if (length(state_seq) > 1) {
+    for (n in 1:(length(state_seq) - 1)) {
+      s_curr <- state_seq[n]     # Current state
+      s_next <- state_seq[n + 1] # Next state
+      T_counts[s_curr, s_next] <- T_counts[s_curr, s_next] + 1
+    }
+  }
+}
+
+# rowSums() gives the total number of times each state occurred
+E_probs <- E_counts / rowSums(E_counts)
+T_probs <- T_counts / rowSums(T_counts)
+
+```
+
+\(c\) Estimate the stationary distribution π of the Markov chain. 
+
+```{r}
+# Eigen decomposition of the transpose of the transition matrix
+eig <- eigen(t(T_probs))
+
+# Find the index of the eigenvalue closest to 1
+idx <- which.min(abs(eig$values - 1))
+
+# Extract the corresponding eigenvector and normalize it so it sums to 1
+pi_stat <- Re(eig$vectors[, idx])
+pi_stat <- pi_stat / sum(pi_stat)
+names(pi_stat) <- states_vocab
+
+print("Stationary Distribution (pi):")
+print(pi_stat)
+
+# ---------------------------------------------------------
+# Sanity check: Does multiplying by T change the distribution?
+# ---------------------------------------------------------
+
+# Multiply the stationary distribution (row vector) by your transition matrix
+pi_next <- as.numeric(pi_stat %*% T_probs)
+names(pi_next) <- states_vocab
+
+print(all.equal(pi_stat, pi_next))
+
+# Combine them into a table to see them side-by-side
+comparison_table <- cbind(Original_pi = pi_stat, 
+                          After_One_Step = pi_next)
+
+print(comparison_table)
+```
+
+\(d\) Having estimated the parameters, i.e., the emission and transition matrices E,T and the vector of initial state probabilities I, you can predict the latent state sequence Z of a protein’s amino acid sequence X using the Viterbi algorithm. Use the Viterbi algorithm provided in viterbi.r (carefully read the parameter description!) and iterate over each data.frame of proteins test.tsv and proteins new.tsv row by row and use the amino acid sequence to predict its secondary structure, which you add to the data.frame as a new column. Save the extended data.frame of proteins new.tsv including the predicted secondary structure as a tsv file and hand it in together with your pdf.
+
+```{r}
+# source("viterbi.r")
+#' @param E n times m matrix with the emission log probabilities of the n latent variables and m observed variables
+#' @param Tr n times n matrix with the transition log probabilities
+#' @param I numeric vector of length n with the initial log probabilities of the n latent variables
+#' @param p a data.frame with a Variable named AminoAcids which holds the amino acid sequence as a character string
+viterbi <- function(E, Tr, I, p) {
+    .as.array <- function(.) stringr::str_split(., "")[[1]]
+    unique.ss <- c("B", "C", "E", "G", "H", "I", "S", "T")
+    unique.aa <- c("A", "C", "D", "E", "F", "G", "H", "I",
+                   "K", "L", "M", "N", "P", "Q", "R", "S",
+                   "T", "U", "V", "W", "X", "Y")
+    for (k in seq(nrow(p))) {
+        sequence <- p$AminoAcids[k]
+        aa.vec <- .as.array(sequence) %>% match(unique.aa)
+        P      <- matrix(0, nrow(E), length(aa.vec))
+        Ptr    <- matrix(0, nrow(E), length(aa.vec))
+        
+        ## sets the paths
+        for (i in seq(length(aa.vec))) {
+            if (i == 1) {
+                P[, i] <- I + E[, aa.vec[i]]
+            } else {
+                for (j in seq(nrow(E))) {
+                    p.loc    <- P[, i - 1] + Tr[, j] + E[j, aa.vec[i]]
+                    P[j, i] <- max(p.loc)
+                    Ptr[j, i] <- which.max(p.loc)
+                }
+            }
+        }
+        
+        ## backtrace: computes the most likely path
+        Phi <- vector(mode="integer",   length=length(aa.vec))
+        Phi[length(Phi)] <- which.max(P[, ncol(P)])
+        ## we start at the back, just as with Needleman-Wunsch or Smith-Waterman
+        for (i in seq(from=length(aa.vec), to=2)) {
+            Phi[i - 1] <- Ptr[Phi[i], i]
+        }
+        
+        states <- unique.ss[Phi]
+        p$PredictedStructure[k] <- paste(states, collapse="")
+    }
+    return(p)
+}
+
+# Required params:
+# Transform E_probs (n x m) into E (simply log)
+E <- log(E_probs)
+# I think rows are current, cols are next state (need to check viterbi.r for this)
+Tr <- log(T_probs)
+# I is a numeric of length n, just need to log
+I_ <- log(initial_probs)
+
+# We add a new column to both proteins test.tsv and proteins new.tsv,
+proteins_test$AminoAcids <- proteins_test$X2
+proteins_new$AminoAcids <- proteins_new$X2
+proteins_test$PredictedStructure <- NA
+proteins_new$PredictedStructure <- NA
+
+proteins_test <- viterbi(E = E, Tr = Tr, I = I_, p = proteins_test)
+proteins_new <- viterbi(E = E, Tr = Tr, I = I_, p = proteins_new)
+
+readr::write_tsv(proteins_new, "proteins_new_extended.tsv", col_names = FALSE)
+```
+
+\(e\) Estimate confidence intervals for each parameter in I,E and T with bootstrapping. In a single bootstrap run i estimate the probabilities for Ii,Ei and Ti the same as before, but not on the original data set proteins train.tsv, but on the resampled data set. I.e., sample with replacement as many rows from proteins train.tsv as the original data set has. Run a thousand bootstraps and compute the empirical 95% confidence intervals for each single parameter in {Ii}i ,{Ei}i and {Ti}i. 
+
+```{r}
+
+# Create a func to eval. all the params at once:
+estimate_params_fast <- function(df) {
+  # Assuming X3 is latent var, X2 is the observed
+  
+  # INITIAL PROBABILITIES (I)
+  first_chars <- substr(df$X3, 1, 1)
+  I_counts <- table(factor(first_chars, levels = states_vocab))
+  I_probs <- as.numeric(I_counts / sum(I_counts))
+  names(I_probs) <- states_vocab
+  
+  # Unlist all sequences simultaneously
+  all_states <- unlist(strsplit(df$X3, ""))
+  all_obs <- unlist(strsplit(df$X2, ""))
+  
+  # EMISSION PROBABILITIES (E)
+  E_counts <- table(factor(all_states, levels = states_vocab), 
+                    factor(all_obs, levels = amino_vocab))
+  E_probs <- (E_counts) / rowSums(E_counts)
+  
+  # TRANSITION PROBABILITIES (T)
+  # Drop the last char for "current", drop the first char for "next"
+  ss_list <- strsplit(df$X3, "")
+  curr_state <- unlist(lapply(ss_list, function(x) x[-length(x)]))
+  next_state <- unlist(lapply(ss_list, function(x) x[-1]))
+  
+  T_counts <- table(factor(curr_state, levels = states_vocab), 
+                    factor(next_state, levels = states_vocab))
+  T_probs <- (T_counts) / rowSums(T_counts)
+  
+  return(list(I = I_probs, E = as.matrix(E_probs), Tr = as.matrix(T_probs)))
+}
+
+B <- 1000    # Number of bootstraps
+n_rows <- nrow(proteins_train)
+# Pre-allocate containers to hold the 1000 different versions of our parameters
+# I is a vector, so 1000 of them makes a matrix
+boot_I <- matrix(0, nrow = B, ncol = length(states_vocab))
+
+# E and T are matrices, so 1000 of them makes a 3D Array!
+boot_E <- array(0, dim = c(length(states_vocab), length(amino_vocab), B))
+boot_T <- array(0, dim = c(length(states_vocab), length(states_vocab), B))
+
+for (b in 1:B) {
+  
+  # Sample row indices WITH replacement
+  resampled_indices <- sample(1:n_rows, size = n_rows, replace = TRUE)
+  
+  # Create the new fake dataset
+  boot_data <- proteins_train[resampled_indices, ]
+  
+  # Estimate parameters on the fake dataset
+  params <- estimate_params_fast(boot_data)
+  
+  # Store the results in our containers
+  boot_I[b, ]   <- params$I
+  boot_E[,,b] <- params$E
+  boot_T[,,b] <- params$Tr
+}
+
+# The apply function lets us calculate the 2.5% and 97.5% quantiles 
+# across the 'bootstrap' dimension for every single parameter simultaneously.
+
+# For Initial Probabilities (margin 2 = columns/states)
+CI_I <- apply(boot_I, 2, quantile, probs = c(0.025, 0.975), na.rm = TRUE)
+
+# For Emission Matrix (margins 1 and 2 = row/col combinations)
+CI_E_lower <- apply(boot_E, c(1, 2), quantile, probs = 0.025, na.rm = TRUE)
+CI_E_upper <- apply(boot_E, c(1, 2), quantile, probs = 0.975, na.rm = TRUE)
+
+# For Transition Matrix (margins 1 and 2 = row/col combinations)
+CI_T_lower <- apply(boot_T, c(1, 2), quantile, probs = 0.025, na.rm = TRUE)
+CI_T_upper <- apply(boot_T, c(1, 2), quantile, probs = 0.975, na.rm = TRUE)
+
+# Add row/col names back for readability
+colnames(CI_I) <- states_vocab
+dimnames(CI_E_lower) <- list(states_vocab, amino_vocab)
+dimnames(CI_E_upper) <- list(states_vocab, amino_vocab)
+dimnames(CI_T_lower) <- list(states_vocab, states_vocab)
+dimnames(CI_T_upper) <- list(states_vocab, states_vocab)
+```
+
+\(f\) Use the following measure to compute the accuracy of the predicted secondary structure P = (pi) for the data.frame of proteins test.tsv given the real secondary structure S = (si): a(P,S) = 1 L i 1 if pi = si 0 if pi ̸= si with sequence length L. Compute the accuracy for every protein in your data.frame and store the accuracies in a vector. What is the accuracy of the Viterbi algorithm over all sequences (i.e. call summary on the vector of accuracies).
+
+```{r}
+# Define the accuracy function
+compute_accuracy <- function(pred_seq, true_seq) {
+  p_vec <- strsplit(pred_seq, "")[[1]]
+  t_vec <- strsplit(true_seq, "")[[1]]
+  
+  # Accuracy is the proportion of matching characters
+  sum(p_vec == t_vec) / length(t_vec)
+}
+
+# Calculate accuracy for every sequence in the test set
+# (Assuming X3 contains the true secondary structure)
+accuracies <- mapply(compute_accuracy, 
+                     proteins_test$PredictedStructure, 
+                     proteins_test$X3)
+
+# Summarize the accuracy over all sequences
+summary(accuracies)
+```

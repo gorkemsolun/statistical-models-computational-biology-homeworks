@@ -1,0 +1,329 @@
+---
+title: "SMCB_Homework02"
+author: "Yuliyan Slavchev, Aurimas Greicius, Dario Franzen"
+date: 25 February 2026
+format: pdf
+---
+
+# Problem 6
+
+## a) Fill the corresponding probabilities (in $\log_{10}$) in the table below
+
+0.  Initialization: 
+$$
+\begin{aligned}
+v_c(0) &= -0.4 \\
+v_{nc}(0) &= -0.2
+\end{aligned}
+$$
+
+1.  Iteration (T) 
+$$
+\begin{aligned}
+v_c(1)  &= E_{c,T} + v_c(0) \\
+        &= -0.4 + (-0.4) \\
+        &= -0.8 \quad\quad(\text{Originated from } v_c) \\
+\\
+v_{nc}(1) &= E_{nc,T} + v_{nc}(0) \\
+          &= -1.0 + (-0.2) \\
+          &= -1.2 \quad\quad(\text{Originated from } v_{nc})
+\end{aligned}
+$$
+
+2.  Iteration (A) 
+$$
+\begin{aligned}
+v_c(2)  &= E_{c,A} + \max(v_c(1) + T_{c,c}, v_{nc}(1) + T_{nc,c}) \\
+        &= E_{c,A} + \max(-0.8 + (-0.5), -1.2 + (-0.2)) \\
+        &= E_{c,A} + \max(-1.3, -1.4) \\
+        &= -0.7 + (-1.3) \\
+        &= -2.0 \quad\quad(\text{Originated from } v_c) \\
+\\
+v_{nc}(2) &= E_{nc,A} + \max(v_{nc}(1) + T_{nc,nc}, v_c(1) + T_{c,nc}) \\
+          &= E_{nc,A} + \max(-1.2 + (-0.4), -0.8 + (-0.15)) \\
+          &= E_{nc,A} + \max(-1.6, -0.95) \\
+          &= -0.7 + (-0.95) \\
+          &= -1.65 \quad\quad(\text{Originated from } v_c)
+\end{aligned}
+$$
+
+3.  Iteration (A)
+$$
+\begin{aligned}
+v_c(3)  &= E_{c,A} + \max(v_c(2) + T_{c,c}, v_{nc}(2) + T_{nc,c}) \\
+        &= E_{c,A} + \max(-2 + (-0.5), -1.65 + (-0.2)) \\
+        &= E_{c,A} + \max(-2.5, -1.85) \\
+        &= -0.7 + (-1.85) \\
+        &= -2.55 \quad\quad(\text{Originated from } v_{nc}) \\
+\\
+v_{nc}(3) &= E_{nc,A} + \max(v_{nc}(2) + T_{nc,nc}, v_c(2) + T_{c,nc}) \\
+          &= E_{nc,A} + \max(-1.65 + (-0.4), -2 + (-0.15)) \\
+          &= E_{nc,A} + \max(-2.05, -2.15) \\
+          &= -0.7 + (-2.05) \\
+          &= -2.75 \quad\quad(\text{Originated from } v_{nc})
+\end{aligned}
+$$
+
+4.  Iteration (C)
+
+$$
+\begin{aligned}
+v_c(4)  &= E_{c,C} + \max(v_c(3) + T_{c,c}, v_{nc}(3) + T_{nc,c}) \\
+        &= E_{c,C} + \max(-2.55 + (-0.5), -2.75 + (-0.2)) \\
+        &= E_{c,C} + \max(-3.05, -2.95) \\
+        &= -0.5 + (-2.95) \\
+        &= -3.45 \quad\quad(\text{Originated from } v_{nc}) \\
+\\
+v_{nc}(4) &= E_{nc,C} + \max(v_{nc}(3) + T_{nc,nc}, v_c(3) + T_{c,nc}) \\
+          &= E_{nc,C} + \max(-2.75 + (-0.4), -2.55 + (-0.15)) \\
+          &= E_{nc,C} + \max(-3.15, -2.70) \\
+          &= -0.2 + (-2.70) \\
+          &= -2.9 \quad\quad(\text{Originated from } v_c)
+\end{aligned}
+$$
+
++------------+------------+--------------+-----------------+-----------------+
+|            | T          | A            | A               | C               |
++============+============+==============+=================+=================+
+| C-Region   | -0.8       | -2.0         | -2.55           | -3.45           |
+|            |            |              |                 |                 |
+|            |            | (From $v_c$) | (From $v_{nc}$) | (From $v_{nc}$) |
++------------+------------+--------------+-----------------+-----------------+
+| NC-Region  | -1.2       | -1.65        | -2.75           | -2.9            |
+|            |            |              |                 |                 |
+|            |            | (From $v_c$) | (From $v_{nc}$) | (From $v_c$)    |
++------------+------------+--------------+-----------------+-----------------+
+
+
+## b) Provide the most likely hidden path for the given sequence (TAAC).
+
+Final sequence with highest probability: C-NC-C-NC
+
+# Problem 7
+
+```{r}
+# Import packages
+library(tidyr)
+```
+
+
+## a) Read `proteins_train.tsv`, `proteins_test.tsv` and `proteins_new.tsv` into memory and store each in a `data.frame`.
+
+```{r}
+proteins_train <- read.delim("data/proteins_train.tsv", header = F, 
+                             stringsAsFactors = FALSE)
+proteins_test <- read.delim("data/proteins_test.tsv", header = F,
+                            stringsAsFactors = FALSE)
+proteins_new <- read.delim("data/proteins_new.tsv", header = F,
+                           stringsAsFactors = FALSE)
+```
+
+## b) Estimate the vector of initial state probabilities $I$, the matrix of transition probabilities $T$ and the matrix for emission probabilities $E$ by using maximum likelihood, i.e., by counting how often each transition and each emission happened and how often each secondary structure was found at the beginning of a protein, respectively.
+
+```{r}
+observed_state_space <- c("A", "C", "D", "E", "F", "G", "H", "I", "K", "L", 
+                          "M", "N", "P", "Q", "R", "S", "T", "U", "V", "W", 
+                          "X", "Y")
+hidden_state_space <- c("B", "C", "E", "G", "H", "I", "S", "T")
+
+# Initial state probabilities I
+init_prob <- function(hid_state, data) {
+  # Collect first letters
+  first_letters <- substr(data[,3], 1, 1)
+  counts <- table(factor(first_letters, levels = hid_state))
+  
+  # Add pseudocount and normalize
+  initial_state_prob <- counts + 1
+  initial_state_prob <- initial_state_prob / sum(initial_state_prob)
+  
+  return(as.numeric(initial_state_prob))
+}
+
+initial_state_prob <- init_prob(hidden_state_space, proteins_train)
+
+```
+
+```{r}
+# Transition probabilities T
+tran_prob <- function(hid_state, data) {
+  # Split strings into lists of characters
+  hid_list <- strsplit(data[,3], "")
+  
+  # Go through each sequence and drop the last letter
+  from_chars <- unlist(lapply(hid_list, function(x) x[-length(x)]))
+  
+  # Go through each sequence and drop the first letter
+  to_chars <- unlist(lapply(hid_list, function(x) x[-1]))
+  
+  # Create the transition matrix
+  counts <- table(
+    factor(from_chars, levels = hid_state),
+    factor(to_chars, levels = hid_state)
+  )
+  
+  # Add pseudocounts and normalize
+  transition_prob <- counts + 1
+  transition_prob <- transition_prob / rowSums(transition_prob)
+  
+  return(matrix(transition_prob, nrow = length(hid_state), 
+                dimnames = list(hid_state, hid_state)))
+}
+
+transition_prob <- tran_prob(hidden_state_space, proteins_train)
+
+
+```
+
+```{r}
+# Emission probabilities E
+emis_prob <- function(hid_state, obs_state, data) {
+  all_obs_chars <- unlist(strsplit(data[,2], ""))
+  all_hid_chars <- unlist(strsplit(data[,3], ""))
+  
+  # Map the two vectors
+  counts <- table(
+    factor(all_hid_chars, levels = hid_state),
+    factor(all_obs_chars, levels = obs_state)
+  )
+  
+  # Add pseudocounts and normalize
+  emission_prob <- counts + 1
+  emission_prob <- emission_prob / rowSums(emission_prob)
+  
+  return(matrix(emission_prob, nrow = length(hid_state), 
+                dimnames = list(hid_state, obs_state)))
+}
+
+emission_prob <- emis_prob(hidden_state_space, observed_state_space, 
+                           proteins_train)
+
+```
+
+
+## c)  Estimate the stationary distribution $\pi$ of the Markov chain
+
+```{r}
+# Get eigenvectors of T transposed
+eig <- eigen(t(transition_prob))
+pi <- Re(eig$vectors[, 1])
+
+pi <- pi / sum(pi)
+
+# Check if the same
+all.equal(as.numeric(t(pi)), as.numeric(t(pi) %*% transition_prob))
+
+pi
+```
+
+## d) Predict secondary structure of protein_test and protein_new using viterbi
+
+```{r}
+source("code/viterbi.r")
+
+# Transform all probabilities into log space to be used in the function
+log_E <- log(emission_prob)
+log_Tr <- log(transition_prob)
+log_I <- log(initial_state_prob)
+
+# First prediction on protein_test
+proteins_test_pred <- proteins_test
+names(proteins_test_pred) <- c("ProteinID", "AminoAcids", "SecondStruct")
+
+proteins_test_pred <- viterbi(
+  E = log_E,
+  Tr = log_Tr,
+  I = log_I,
+  p = proteins_test_pred
+)
+
+# Second prediction on protein_new
+proteins_new_pred <- proteins_new
+names(proteins_new_pred) <- c("ProteinID", "AminoAcids")
+
+proteins_new_pred <- viterbi(
+  E = log_E,
+  Tr = log_Tr,
+  I = log_I,
+  p = proteins_new_pred
+)
+
+# Write protein_new_pred as file
+write.table(proteins_new_pred, file="proteins_new_pred.tsv", 
+            quote=FALSE, sep="\t", col.names = FALSE, row.names = FALSE)
+
+```
+
+## e) Estimate confidence intervals for each parameter in $I$, $E$ and $T$ with bootstrapping.
+
+```{r}
+# Number of rows of proteins_train
+n_rows <- nrow(proteins_train)
+n_hidden <- length(hidden_state_space)
+n_observed <- length(observed_state_space)
+
+# Container to hold the calculated probs
+boot_I <- matrix(NA, nrow = 1000, ncol = n_hidden)
+colnames(boot_I) <- hidden_state_space
+
+boot_E <- array(NA, dim = c(n_hidden, n_observed, 1000))
+dimnames(boot_E) <- list(hidden_state_space, observed_state_space, NULL)
+
+boot_T <- array(NA, dim = c(n_hidden, n_hidden, 1000))
+dimnames(boot_T) <- list(hidden_state_space, hidden_state_space, NULL)
+
+# Calculate probabilites 1000 times
+for (i in 1:1000) {
+  boot_indices <- sample(1:n_rows, size = n_rows, replace = TRUE)
+  proteins_train_boot <- proteins_train[boot_indices, ]
+  
+  # Call functions
+  boot_init <- init_prob(hidden_state_space, proteins_train_boot)
+  boot_emis <- emis_prob(hidden_state_space, observed_state_space, 
+                         proteins_train_boot)
+  boot_tran <- tran_prob(hidden_state_space, proteins_train_boot)
+  
+  # Save values
+  boot_I[i, ] <- boot_init
+  boot_E[, , i] <- boot_emis
+  boot_T[, , i] <- boot_tran
+}
+```
+
+```{r}
+# Get the 95% CI for every parameter
+CI_I <- apply(boot_I, 2, function(x) quantile(x, probs = c(0.025, 0.975)))
+CI_E <- apply(boot_E, c(1, 2), function(x) quantile(x, 
+                                                    probs = c(0.025, 0.975)))
+CI_T <- apply(boot_T, c(1, 2), function(x) quantile(x, 
+                                                    probs = c(0.025, 0.975)))
+```
+
+
+## f) Compute the accuracy of the secondary structure predicitons
+
+```{r}
+# Create a vector to hold accuracy values
+accuracy <- c(rep(0, nrow(proteins_test_pred)))
+names(accuracy) <- proteins_test_pred$ProteinID
+
+# Iterate over rows in protein_test
+for (i in 1:nrow(proteins_test_pred)) {
+  current_secStruc <- proteins_test_pred[i,3]
+  current_pred <- proteins_test_pred[i,4]
+  
+  # Iterate over chars in the current secondary structure and prediction
+  for (j in 1:nchar(current_secStruc)) {
+    if (substr(current_secStruc, j, j) == substr(current_pred, j, j)) {
+      accuracy[proteins_test_pred[i,1]] <- accuracy[
+        proteins_test_pred[i,1]] + 1
+    }
+  }
+  
+  accuracy[proteins_test_pred[i,1]] <- accuracy[
+    proteins_test_pred[i,1]] / nchar(current_secStruc)
+}
+
+summary(accuracy)
+
+```
+

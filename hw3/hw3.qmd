@@ -189,6 +189,10 @@ for (protein in 1:L) {
 I <- I_counts/sum(I_counts)
 E <- E_counts/rowSums(E_counts)
 T <- T_counts/rowSums(T_counts)
+
+print(I)
+print(T)
+print(E)
 ```
 
 ### (7c) The stationary distribution $\pi$
@@ -211,9 +215,18 @@ idx_value1 <- which.min(abs(decomposed_T$values - 1))
 vector_value1 <- decomposed_T$vectors[,idx_value1]
 
 pi <- vector_value1/sum(vector_value1)
+pi <- Re(pi)
+pi <- pi / sum(pi)
+names(pi) <- ss_codes
 
 pi_matrix = matrix(pi, dimnames = list(ss_codes))
 print((pi_matrix))
+
+pi_next <- as.numeric(pi %*% T)
+names(pi_next) <- ss_codes
+
+print(all.equal(pi, pi_next))
+print(cbind(Original_pi = pi, After_One_Step = pi_next))
 ```
 
 ### (7d) The latent state sequence Z using Viterbi algorithm
@@ -262,6 +275,42 @@ write.table(proteins_new_result, file="proteins_new_pred.tsv",
 B <- 1000
 n_proteins <- nrow(proteins_train)
 
+estimate_params <- function(df, ss_codes, aa_codes) {
+  n_rows <- nrow(df)
+  I_counts <- matrix(0, nrow = length(ss_codes), ncol = 1, dimnames = list(ss_codes, "Init"))
+  T_counts <- matrix(0, nrow = length(ss_codes), ncol = length(ss_codes), dimnames = list(ss_codes, ss_codes))
+  E_counts <- matrix(0, nrow = length(ss_codes), ncol = length(aa_codes), dimnames = list(ss_codes, aa_codes))
+
+  for (protein in 1:n_rows) {
+    aa_seq <- df$`Amino acid sequence`[protein]
+    ss_seq <- df$`Secondary structure code`[protein]
+
+    first_ss <- substr(ss_seq, 1, 1)
+    I_counts[first_ss, ] <- I_counts[first_ss, ] + 1
+
+    l_seq <- nchar(aa_seq)
+    if (l_seq > 0) {
+      aa_split <- strsplit(aa_seq, "")[[1]]
+      ss_split <- strsplit(ss_seq, "")[[1]]
+
+      for (N in 1:l_seq) {
+        E_counts[ss_split[N], aa_split[N]] <- E_counts[ss_split[N], aa_split[N]] + 1
+        if (N > 1) {
+          T_counts[ss_split[N - 1], ss_split[N]] <- T_counts[ss_split[N - 1], ss_split[N]] + 1
+        }
+      }
+    }
+  }
+
+  I_probs <- I_counts / sum(I_counts)
+  row_sums_E <- rowSums(E_counts)
+  E_probs <- ifelse(row_sums_E == 0, 0, E_counts / row_sums_E)
+  row_sums_T <- rowSums(T_counts)
+  T_probs <- ifelse(row_sums_T == 0, 0, T_counts / row_sums_T)
+
+  list(I = I_probs, T = T_probs, E = E_probs)
+}
+
 I_boot <- array(0, dim = c(length(ss_codes), 1, B), dimnames = list(ss_codes, "Init", NULL))
 T_boot <- array(0, dim = c(length(ss_codes), length(ss_codes), B), dimnames = list(ss_codes, ss_codes, NULL))
 E_boot <- array(0, dim = c(length(ss_codes), length(aa_codes), B), dimnames = list(ss_codes, aa_codes, NULL))
@@ -272,47 +321,11 @@ for (b in 1:B) {
   # Sample with replacement
   resampled_indices <- sample(1:n_proteins, n_proteins, replace = TRUE)
   boot_data <- proteins_train[resampled_indices, ]
-  
-  # Initialize counts for this bootstrap iteration
-  I_counts <- matrix(0, nrow = length(ss_codes), ncol = 1, dimnames = list(ss_codes, "Init"))
-  T_counts <- matrix(0, nrow = length(ss_codes), ncol = length(ss_codes), dimnames = list(ss_codes, ss_codes))
-  E_counts <- matrix(0, nrow = length(ss_codes), ncol = length(aa_codes), dimnames = list(ss_codes, aa_codes))
-  
-  # Calculate counts (similar to 7b)
-  for (protein in 1:n_proteins) {
-    aa_seq <- boot_data$`Amino acid sequence`[protein]
-    ss_seq <- boot_data$`Secondary structure code`[protein]
-    
-    first_ss <- substr(ss_seq, 1, 1)
-    I_counts[first_ss, ] <- I_counts[first_ss, ] + 1
-    
-    l_seq <- nchar(aa_seq)
-    if (l_seq > 0) {
-      # Split strings into vectors of characters for faster access
-      aa_split <- strsplit(aa_seq, "")[[1]]
-      ss_split <- strsplit(ss_seq, "")[[1]]
-      
-      for (N in 1:l_seq) {
-        # Emission counts
-        E_counts[ss_split[N], aa_split[N]] <- E_counts[ss_split[N], aa_split[N]] + 1
-        
-        # Transition counts
-        if (N > 1) {
-          T_counts[ss_split[N-1], ss_split[N]] <- T_counts[ss_split[N-1], ss_split[N]] + 1
-        }
-      }
-    }
-  }
-  
-  # Calculate probabilities and store them in the b-th slice of the array
-  I_boot[, , b] <- I_counts / sum(I_counts)
-  
-  # Handle potential division by zero if a state never appears in a bootstrap sample
-  row_sums_E <- rowSums(E_counts)
-  E_boot[, , b] <- ifelse(row_sums_E == 0, 0, E_counts / row_sums_E)
 
-  row_sums_T <- rowSums(T_counts)
-  T_boot[, , b] <- ifelse(row_sums_T == 0, 0, T_counts / row_sums_T)
+  params <- estimate_params(boot_data, ss_codes, aa_codes)
+  I_boot[, , b] <- params$I
+  T_boot[, , b] <- params$T
+  E_boot[, , b] <- params$E
 }
 
 # Compute the empirical 95% confidence intervals (2.5% and 97.5% quantiles)
@@ -326,34 +339,44 @@ T_upper <- apply(T_boot, c(1, 2), quantile, probs = 0.975, na.rm = TRUE)
 E_lower <- apply(E_boot, c(1, 2), quantile, probs = 0.025, na.rm = TRUE)
 E_upper <- apply(E_boot, c(1, 2), quantile, probs = 0.975, na.rm = TRUE)
 
+dimnames(I_lower) <- list(ss_codes, "Init")
+dimnames(I_upper) <- list(ss_codes, "Init")
+dimnames(T_lower) <- list(ss_codes, ss_codes)
+dimnames(T_upper) <- list(ss_codes, ss_codes)
+dimnames(E_lower) <- list(ss_codes, aa_codes)
+dimnames(E_upper) <- list(ss_codes, aa_codes)
+
 # To verify
 print(I_lower)
 print(I_upper)
+print(T_lower)
+print(T_upper)
+print(E_lower)
+print(E_upper)
 ```
 
 ### (7f) Accuracy of predictions
 
 ```{r}
+compute_accuracy <- function(pred_seq, true_seq) {
+  pred_chars <- strsplit(pred_seq, "")[[1]]
+  true_chars <- strsplit(true_seq, "")[[1]]
+  l_seq <- length(true_chars)
+
+  if (l_seq == 0) {
+    return(NA_real_)
+  }
+
+  sum(pred_chars == true_chars) / l_seq
+}
 
 n_test_proteins <- nrow(proteins_test_result)
 accuracies <- numeric(n_test_proteins)
 
 for (i in 1:n_test_proteins) {
-  
-  real_seq <- proteins_test_result[i, 3] 
-  pred_seq <- proteins_test_result[i, 4] 
-  
-  real_chars <- strsplit(real_seq, "")[[1]]
-  pred_chars <- strsplit(pred_seq, "")[[1]]
-  
-  L_seq <- length(real_chars)
-  
-  if (L_seq > 0) {
-    matches <- sum(real_chars == pred_chars)
-    accuracies[i] <- matches / L_seq
-  } else {
-    accuracies[i] <- NA # Handle edge case if a sequence is completely empty
-  }
+  real_seq <- proteins_test_result[i, 3]
+  pred_seq <- proteins_test_result[i, 4]
+  accuracies[i] <- compute_accuracy(pred_seq, real_seq)
 }
 
 summary(accuracies)
