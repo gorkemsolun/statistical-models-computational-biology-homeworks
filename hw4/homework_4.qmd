@@ -1,0 +1,132 @@
+---
+title: "homework_4"
+format: pdf
+editor: visual
+---
+
+---
+title: "HW4 SMCB"
+author:
+  - Bernhard Buss
+  - Dario Franzen
+  - Aurimas Greicius
+  - Timothy Lauren Nijhuis
+  - Carlo Rossetto
+  - Yuliyan Slavchev
+  - Görkem Kadir Solun
+date: "March 2026"
+format: pdf
+---
+
+## Problem 8
+
+From Figure 1, the match columns are 1, 2, 3 and the insert region is the contiguous block between match positions 2 and 3. The five aligned sequences are:
+
+| \-       | $M_1$ | $M_2$ | $I$ | $I$ | $I$ | $M_3$ |
+|----------|:-----:|:-----:|:---:|:---:|:---:|:-----:|
+| **bat**  |  $A$  |  $G$  | $-$ | $-$ | $-$ |  $C$  |
+| **rat**  |  $A$  |  $-$  | $A$ | $G$ | $-$ |  $C$  |
+| **cat**  |  $A$  |  $G$  | $-$ | $-$ | $-$ |  $C$  |
+| **gnat** |  $-$  |  $G$  | $A$ | $A$ | $A$ |  $C$  |
+| **goat** |  $A$  |  $G$  | $-$ | $-$ | $A$ |  $C$  |
+
+### 1. Match emission probabilities
+
+Using the add-one estimate $$E_{i}(a)=\frac{N_{i}(a)+1}{\sum_{a^{\prime}\in\{A,C,G,T\}}(N_{i}(a^{\prime})+1)}$$ we obtain:
+
+-   **Position 1:** Observed symbols: $A, A, A, -, A$, so $N_{1}(A)=4$ and $N_{1}(C)=N_{1}(G)=N_{1}(T)=0$.
+    -   Hence, $E_{1}(A)=\frac{5}{8}$ and $E_{1}(C)=E_{1}(G)=E_{1}(T)=\frac{1}{8}$.
+-   **Position 2:** Observed symbols: $G, -, G, G, G$, so $N_{2}(G)=4$ and $N_{2}(A)=N_{2}(C)=N_{2}(T)=0$.
+    -   Hence, $E_{2}(G)=\frac{5}{8}$ and $E_{2}(A)=E_{2}(C)=E_{2}(T)=\frac{1}{8}$.
+-   **Position 3:** Observed symbols: $C, C, C, C, C$, so $N_{3}(C)=5$ and $N_{3}(A)=N_{3}(G)=N_{3}(T)=0$.
+    -   Hence, $E_{3}(C)=\frac{6}{9}=\frac{2}{3}$ and $E_{3}(A)=E_{3}(G)=E_{3}(T)=\frac{1}{9}$.
+
+Therefore,
+
+$$E_{1}=(A:\frac{5}{8},C:\frac{1}{8},G:\frac{1}{8},T:\frac{1}{8})$$
+
+$$E_{2}=(A:\frac{1}{8},C:\frac{1}{8},G:\frac{5}{8},T:\frac{1}{8})$$
+
+$$E_{3}=(A:\frac{1}{9},C:\frac{2}{3},G:\frac{1}{9},T:\frac{1}{9})$$
+
+### 2. Insert emission probabilities
+
+All three insert columns belong to the same insert state $I_{2}$. Ignoring gaps, the insert emissions are:
+
+**rat:** A, G
+
+**gnat:** A, A, A
+
+**goat:** A
+
+So the counts are $N_{I_{2}}(A)=5$, $N_{I_{2}}(G)=1$, and $N_{I_{2}}(C)=N_{I_{2}}(T)=0$.
+
+Using the same add-one smoothing, we get: $$E_{I_{2}}(a)=\frac{N_{I_{2}}(a)+1}{\sum_{a^{\prime}\in\{A,C,G,T\}}(N_{I_{2}}(a^{\prime})+1)}$$
+
+Thus, $E_{I_{2}}(A)=\frac{6}{10}=\frac{3}{5}$, $E_{I_{2}}(G)=\frac{2}{10}=\frac{1}{5}$, and $E_{I_{2}}(C)=E_{I_{2}}(T)=\frac{1}{10}$. $$E_{I_{2}}=(A:\frac{3}{5},C:\frac{1}{10},G:\frac{1}{5},T:\frac{1}{10})$$
+
+For the other insert states $I_{0}$, $I_{1}$, $I_{3}$ there are no observed insert emissions in the alignment, so with add-one smoothing they are uniform: $$E_{I_{0}}=E_{I_{1}}=E_{I_{3}}=(A:\frac{1}{4},C:\frac{1}{4},G:\frac{1}{4},T:\frac{1}{4})$$
+
+### 3. Transition probabilities
+
+We use: $$T_{i}(k\rightarrow l)=\frac{N_{i}(k\rightarrow l)+1}{\sum_{l^{\prime}\in\{M,I,D\}}(N_{i}(k\rightarrow l^{\prime})+1)}.$$
+
+**Observed state paths** The five sequences correspond to:
+
+**bat:** $M_{0}\rightarrow M_{1}\rightarrow M_{2}\rightarrow M_{3}\rightarrow M_{4}$
+
+**rat:** $M_{0}\rightarrow M_{1}\rightarrow D_{2}\rightarrow I_{2}\rightarrow I_{2}\rightarrow M_{3}\rightarrow M_{4}$
+
+**cat:** $M_{0}\rightarrow M_{1}\rightarrow M_{2}\rightarrow M_{3}\rightarrow M_{4}$
+
+**gnat:** $M_{0}\rightarrow D_{1}\rightarrow M_{2}\rightarrow I_{2}\rightarrow I_{2}\rightarrow I_{2}\rightarrow M_{3}\rightarrow M_{4}$
+
+**goat:** $M_{0}\rightarrow M_{1}\rightarrow M_{2}\rightarrow I_{2}\rightarrow M_{3}\rightarrow M_{4}$
+
+**Position** $i=0$**; from Begin (**$M_{0}$**)**
+
+Counts:
+
+$$N_{0}(M\rightarrow M)=4, \ \ N_{0}(M\rightarrow I)=0, \ \ N_{0}(M\rightarrow D)=1$$
+
+Therefore: $$T_{0}(M\rightarrow M)=\frac{5}{8}, \ \ T_{0}(M\rightarrow I)=\frac{1}{8}, \ \ T_{0}(M\rightarrow D)=\frac{1}{4}$$
+
+**Position** $i=1$**; from states at position 1 to position 2.** **From** $M_{1}$**:**
+
+$$N_{1}(M\rightarrow M)=3, \ \ N_{1}(M\rightarrow I)=0, \ \ N_{1}(M\rightarrow D)=1$$
+
+So $$T_{1}(M\rightarrow M)=\frac{4}{7}, \ \ T_{1}(M\rightarrow I)=\frac{1}{7}, \ \ T_{1}(M\rightarrow D)=\frac{2}{7}$$
+
+**From** $D_{1}$: $$N_{1}(D\rightarrow M)=1, \ \ N_{1}(D\rightarrow I)=0, \ \ N_{1}(D\rightarrow D)=0$$
+
+So, $$T_{1}(D\rightarrow M)=\frac{1}{2}, \ \ T_{1}(D\rightarrow I)=\frac{1}{4}, \ \ T_{1}(D\rightarrow D)=\frac{1}{4}$$
+
+There are no observed transitions from $I_{1}$, so with add-one smoothing: $$T_{1}(I\rightarrow M)=T_{1}(I\rightarrow I)=T_{1}(I\rightarrow D)=\frac{1}{3}$$
+
+**Position** $i=2$**; from states at position 2 to position 3.** **From** $M_{2}$**:**
+
+$$N_{2}(M\rightarrow M)=2, \ \ N_{2}(M\rightarrow I)=2, \ \ N_{2}(M\rightarrow D)=0$$
+
+So, $$T_{2}(M\rightarrow M)=\frac{3}{7}, \ \ T_{2}(M\rightarrow I)=\frac{3}{7},  \ \ T_{2}(M\rightarrow D)=\frac{1}{7}$$
+
+**From** $D_{2}$: $$N_{2}(D\rightarrow M)=0, \ \  N_{2}(D\rightarrow I)=1, \ \ N_{2}(D\rightarrow D)=0$$
+
+So, $$T_{2}(D\rightarrow M)=\frac{1}{4}, \ \  T_{2}(D\rightarrow I)=\frac{1}{2}, \ \ T_{2}(D\rightarrow D)=\frac{1}{4}$$
+
+**From** $I_{2}$: $$N_{2}(I\rightarrow M)=3, \ \ N_{2}(I\rightarrow I)=3, \ \  N_{2}(I\rightarrow D)=0$$
+
+since there are three exits from $I_{2}$ to $M_{3}$ and three self-loops in $I_{2}$.
+
+Hence, $$T_{2}(I\rightarrow M)=\frac{4}{9}, \ \ T_{2}(I\rightarrow I)=\frac{4}{9}, \ \ T_{2}(I\rightarrow D)=\frac{1}{9}$$
+
+**Position** $i=3$**: from states at position 3 to End (**$M_{4}$**)**
+
+All observed paths go from $M_{3}$ to End, so $$N_{3}(M\rightarrow M)=5, \ \ N_{3}(M\rightarrow I)=0, \ \ N_{3}(M\rightarrow D)=0$$
+
+and thus, $$T_{3}(M\rightarrow M)=\frac{3}{4}, \ \ T_{3}(M\rightarrow I)=\frac{1}{8}, \ \ T_{3}(M\rightarrow D)=\frac{1}{8}$$
+
+There are no observed transitions from $D_{3}$ or $I_{3}$, so with add-one smoothing:
+
+$$T_{3}(D\rightarrow M)=T_{3}(D\rightarrow I)=T_{3}(D\rightarrow D)=\frac{1}{3}$$
+
+$$T_{3}(I\rightarrow M)=T_{3}(I\rightarrow I)=T_{3}(I\rightarrow D)=\frac{1}{3}$$
