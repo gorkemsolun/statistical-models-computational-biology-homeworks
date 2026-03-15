@@ -1,0 +1,285 @@
+\documentclass{article}
+% --- Page formatting ---
+\usepackage[a4paper, margin=1in]{geometry}
+% other good options:
+% \usepackage[a4paper, margin=0.8in]{geometry}
+% \usepackage[letterpaper, margin=1in]{geometry}
+
+% --- Your packages ---
+\usepackage{graphicx}
+\usepackage{amsfonts}
+\usepackage{amsmath}
+\usepackage{float}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{booktabs} 
+\usepackage{blkarray}
+\usepackage{tabularx}
+\usepackage{float}
+\usepackage{amsthm}
+\newtheorem{proposition}{Proposition}
+
+\title{HW4 SMCB}
+\author{
+Bernhard Buss \and
+Dario Franzen \and
+Aurimas Greicius \and
+Timothy Lauren Nijhuis \and
+Carlo Rossetto \and
+Yuliyan Slavchev \and
+Görkem Kadir Solun
+}
+\date{March 2026}
+
+\begin{document}
+
+\maketitle
+
+\section*{Problem 8}
+
+From Figure 1, the match columns are \(1,2,3\) and the insert region is the contiguous block between match positions \(2\) and \(3\). The five aligned sequences are
+\[
+\begin{array}{c|cccccc}
+ & M_1 & M_2 & I & I & I & M_3\\
+\hline
+\text{bat}  & A & G & - & - & - & C\\
+\text{rat}  & A & - & A & G & - & C\\
+\text{cat}  & A & G & - & - & - & C\\
+\text{gnat} & - & G & A & A & A & C\\
+\text{goat} & A & G & - & - & A & C
+\end{array}
+\]
+
+\subsection*{1. Match emission probabilities}
+
+Using the add-one estimate
+\[
+E_i(a)=\frac{N_i(a)+1}{\sum_{a' \in \{A,C,G,T\}} (N_i(a')+1)},
+\]
+we obtain:
+
+\paragraph{Position \(1\):}
+Observed symbols: \(A,A,A,-,A\), so
+\[
+N_1(A)=4,\qquad N_1(C)=N_1(G)=N_1(T)=0.
+\]
+Hence
+\[
+E_1(A)=\frac{5}{8},\qquad
+E_1(C)=E_1(G)=E_1(T)=\frac{1}{8}.
+\]
+
+\paragraph{Position \(2\):}
+Observed symbols: \(G,-,G,G,G\), so
+\[
+N_2(G)=4,\qquad N_2(A)=N_2(C)=N_2(T)=0.
+\]
+Hence
+\[
+E_2(G)=\frac{5}{8},\qquad
+E_2(A)=E_2(C)=E_2(T)=\frac{1}{8}.
+\]
+
+\paragraph{Position \(3\):}
+Observed symbols: \(C,C,C,C,C\), so
+\[
+N_3(C)=5,\qquad N_3(A)=N_3(G)=N_3(T)=0.
+\]
+Hence
+\[
+E_3(C)=\frac{6}{9}=\frac{2}{3},\qquad
+E_3(A)=E_3(G)=E_3(T)=\frac{1}{9}.
+\]
+
+Therefore,
+\[
+\boxed{
+E_1=(A:\tfrac58,\ C:\tfrac18,\ G:\tfrac18,\ T:\tfrac18)
+}
+\]
+\[
+\boxed{
+E_2=(A:\tfrac18,\ C:\tfrac18,\ G:\tfrac58,\ T:\tfrac18)
+}
+\]
+\[
+\boxed{
+E_3=(A:\tfrac19,\ C:\tfrac23,\ G:\tfrac19,\ T:\tfrac19)
+}
+\]
+
+\subsection*{2. Insert emission probabilities}
+
+All three insert columns belong to the same insert state \(I_2\). Ignoring gaps, the insert emissions are:
+\[
+\text{rat}: A,G,\qquad
+\text{gnat}: A,A,A,\qquad
+\text{goat}: A.
+\]
+So the counts are
+\[
+N_{I_2}(A)=5,\qquad N_{I_2}(G)=1,\qquad N_{I_2}(C)=N_{I_2}(T)=0.
+\]
+
+Using the same add-one smoothing,
+\[
+E_{I_2}(a)=\frac{N_{I_2}(a)+1}{\sum_{a' \in \{A,C,G,T\}} (N_{I_2}(a')+1)},
+\]
+we get
+\[
+E_{I_2}(A)=\frac{6}{10}=\frac35,\qquad
+E_{I_2}(G)=\frac{2}{10}=\frac15,\qquad
+E_{I_2}(C)=E_{I_2}(T)=\frac{1}{10}.
+\]
+
+Thus
+\[
+\boxed{
+E_{I_2}=(A:\tfrac35,\ C:\tfrac1{10},\ G:\tfrac15,\ T:\tfrac1{10})
+}
+\]
+
+\medskip
+
+For the other insert states \(I_0,I_1,I_3\), there are no observed insert emissions in the alignment, so with add-one smoothing they are uniform:
+\[
+\boxed{
+E_{I_0}=E_{I_1}=E_{I_3}=(A:\tfrac14,\ C:\tfrac14,\ G:\tfrac14,\ T:\tfrac14)
+}
+\]
+
+\subsection*{3. Transition probabilities}
+
+We use
+\[
+T_i(k\to \ell)=\frac{N_i(k\to \ell)+1}{\sum_{\ell' \in \{M,I,D\}} \bigl(N_i(k\to \ell')+1\bigr)}.
+\]
+
+\paragraph{Observed state paths}
+The five sequences correspond to:
+
+\[
+\begin{aligned}
+\text{bat}:&\quad M_0 \to M_1 \to M_2 \to M_3 \to M_4,\\
+\text{rat}:&\quad M_0 \to M_1 \to D_2 \to I_2 \to I_2 \to M_3 \to M_4,\\
+\text{cat}:&\quad M_0 \to M_1 \to M_2 \to M_3 \to M_4,\\
+\text{gnat}:&\quad M_0 \to D_1 \to M_2 \to I_2 \to I_2 \to I_2 \to M_3 \to M_4,\\
+\text{goat}:&\quad M_0 \to M_1 \to M_2 \to I_2 \to M_3 \to M_4.
+\end{aligned}
+\]
+
+\paragraph{Position \(i=0\): from Begin (\(M_0\))}
+Counts:
+\[
+N_0(M\to M)=4,\qquad N_0(M\to I)=0,\qquad N_0(M\to D)=1.
+\]
+Therefore
+\[
+\boxed{
+T_0(M\to M)=\frac58,\quad
+T_0(M\to I)=\frac18,\quad
+T_0(M\to D)=\frac14
+}
+\]
+
+\paragraph{Position \(i=1\): from states at position 1 to position 2}
+From \(M_1\):
+\[
+N_1(M\to M)=3,\qquad N_1(M\to I)=0,\qquad N_1(M\to D)=1,
+\]
+so
+\[
+\boxed{
+T_1(M\to M)=\frac47,\quad
+T_1(M\to I)=\frac17,\quad
+T_1(M\to D)=\frac27
+}
+\]
+
+From \(D_1\):
+\[
+N_1(D\to M)=1,\qquad N_1(D\to I)=0,\qquad N_1(D\to D)=0,
+\]
+so
+\[
+\boxed{
+T_1(D\to M)=\frac12,\quad
+T_1(D\to I)=\frac14,\quad
+T_1(D\to D)=\frac14
+}
+\]
+
+There are no observed transitions from \(I_1\), so with add-one smoothing:
+\[
+\boxed{
+T_1(I\to M)=T_1(I\to I)=T_1(I\to D)=\frac13
+}
+\]
+
+\paragraph{Position \(i=2\): from states at position 2 to position 3}
+From \(M_2\):
+\[
+N_2(M\to M)=2,\qquad N_2(M\to I)=2,\qquad N_2(M\to D)=0,
+\]
+so
+\[
+\boxed{
+T_2(M\to M)=\frac37,\quad
+T_2(M\to I)=\frac37,\quad
+T_2(M\to D)=\frac17
+}
+\]
+
+From \(D_2\):
+\[
+N_2(D\to M)=0,\qquad N_2(D\to I)=1,\qquad N_2(D\to D)=0,
+\]
+so
+\[
+\boxed{
+T_2(D\to M)=\frac14,\quad
+T_2(D\to I)=\frac12,\quad
+T_2(D\to D)=\frac14
+}
+\]
+
+From \(I_2\):
+\[
+N_2(I\to M)=3,\qquad N_2(I\to I)=3,\qquad N_2(I\to D)=0,
+\]
+since there are three exits from \(I_2\) to \(M_3\) and three self-loops in \(I_2\). Hence
+\[
+\boxed{
+T_2(I\to M)=\frac49,\quad
+T_2(I\to I)=\frac49,\quad
+T_2(I\to D)=\frac19
+}
+\]
+
+\paragraph{Position \(i=3\): from states at position 3 to End (\(M_4\))}
+All observed paths go from \(M_3\) to End, so
+\[
+N_3(M\to M)=5,\qquad N_3(M\to I)=0,\qquad N_3(M\to D)=0,
+\]
+and thus
+\[
+\boxed{
+T_3(M\to M)=\frac34,\quad
+T_3(M\to I)=\frac18,\quad
+T_3(M\to D)=\frac18
+}
+\]
+
+There are no observed transitions from \(D_3\) or \(I_3\), so with add-one smoothing:
+\[
+\boxed{
+T_3(D\to M)=T_3(D\to I)=T_3(D\to D)=\frac13
+}
+\]
+\[
+\boxed{
+T_3(I\to M)=T_3(I\to I)=T_3(I\to D)=\frac13
+}
+\]
+
+\end{document}
