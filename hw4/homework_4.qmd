@@ -1,11 +1,11 @@
 ---
-title: "homework_4"
+title: "Homework 4: Markov models for sequence alignment"
 format: pdf
 editor: visual
 ---
 
 ---
-title: "HW4 SMCB"
+title: "Homework 4: Markov models for sequence alignment"
 author:
   - Bernhard Buss
   - Dario Franzen
@@ -18,7 +18,7 @@ date: "March 2026"
 format: pdf
 ---
 
-## Problem 8
+## Problem 8: Estimating emission and transition probabilities for profile HMM
 
 From Figure 1, the match columns are 1, 2, 3 and the insert region is the contiguous block between match positions 2 and 3. The five aligned sequences are:
 
@@ -71,7 +71,9 @@ For the other insert states $I_{0}$, $I_{1}$, $I_{3}$ there are no observed inse
 
 We use: $$T_{i}(k\rightarrow l)=\frac{N_{i}(k\rightarrow l)+1}{\sum_{l^{\prime}\in\{M,I,D\}}(N_{i}(k\rightarrow l^{\prime})+1)}.$$
 
-**Observed state paths** The five sequences correspond to:
+**Observed state paths**
+
+The five sequences correspond to:
 
 **bat:** $M_{0}\rightarrow M_{1}\rightarrow M_{2}\rightarrow M_{3}\rightarrow M_{4}$
 
@@ -130,3 +132,293 @@ There are no observed transitions from $D_{3}$ or $I_{3}$, so with add-one smoot
 $$T_{3}(D\rightarrow M)=T_{3}(D\rightarrow I)=T_{3}(D\rightarrow D)=\frac{1}{3}$$
 
 $$T_{3}(I\rightarrow M)=T_{3}(I\rightarrow I)=T_{3}(I\rightarrow D)=\frac{1}{3}$$
+
+A further remark is that from position 3, the following transitions: $T_{3}(D\rightarrow D)$, $T_{3}(I \rightarrow D)$, $T_{3}(M \rightarrow D)$ are not only not observed, but also not feasible, given $D_{4}$ and $I_{4}$ are not present in the proposed HMM topology in Figure 1 in the instructions. Probabilities are assigned to them as per the formula in the instructions provided.
+
+\newpage
+
+Summary tables for the transitions probabilities are provided in fraction and decimal format below.
+
+\renewcommand{\arraystretch}{1.8}
+
+|                   | $T_1$         | $T_2$         | $T_3$         |
+|-------------------|---------------|---------------|---------------|
+| $M \rightarrow M$ | $\frac{4}{7}$ | $\frac{1}{4}$ | $\frac{3}{4}$ |
+| $M \rightarrow I$ | $\frac{1}{7}$ | $\frac{1}{4}$ | $\frac{1}{8}$ |
+| $M \rightarrow D$ | $\frac{2}{7}$ | $\frac{1}{4}$ | $\frac{1}{8}$ |
+|                   |               |               |               |
+| $D \rightarrow M$ | $\frac{1}{2}$ | $\frac{1}{4}$ | $\frac{1}{3}$ |
+| $D \rightarrow I$ | $\frac{1}{4}$ | $\frac{1}{2}$ | $\frac{1}{3}$ |
+| $D \rightarrow D$ | $\frac{1}{4}$ | $\frac{1}{4}$ | $\frac{1}{3}$ |
+|                   |               |               |               |
+| $I \rightarrow M$ | $\frac{1}{3}$ | $\frac{4}{9}$ | $\frac{1}{3}$ |
+| $I \rightarrow I$ | $\frac{1}{3}$ | $\frac{4}{9}$ | $\frac{1}{3}$ |
+| $I \rightarrow D$ | $\frac{1}{3}$ | $\frac{1}{4}$ | $\frac{1}{3}$ |
+
+\renewcommand{\arraystretch}{1}
+
+|                   | $T_1$ | $T_2$ | $T_3$ |
+|-------------------|-------|-------|-------|
+| $M \rightarrow M$ | 0.571 | 0.429 | 0.750 |
+| $M \rightarrow I$ | 0.143 | 0.429 | 0.125 |
+| $M \rightarrow D$ | 0.286 | 0.143 | 0.125 |
+|                   |       |       |       |
+| $D \rightarrow M$ | 0.500 | 0.250 | 0.333 |
+| $D \rightarrow I$ | 0.250 | 0.500 | 0.333 |
+| $D \rightarrow D$ | 0.250 | 0.250 | 0.333 |
+|                   |       |       |       |
+| $I \rightarrow M$ | 0.333 | 0.444 | 0.333 |
+| $I \rightarrow I$ | 0.333 | 0.444 | 0.333 |
+| $I \rightarrow D$ | 0.333 | 0.111 | 0.333 |
+
+\newpage
+
+## Problem 9: Protein family membership classification
+
+```{r}
+source("code/profileHMM.R")
+
+library(ggplot2)
+library(patchwork)
+library(knitr)
+```
+
+### 1) Read the two alignments ‘GTP_binding_proteins.txt’ and ‘ATPases.txt’ into memory using the function `parseAlignment()` from "`profileHMM.R`"
+
+```{r}
+# Read the two alignments
+setwd("~/My Documents/Carlo/ETH UBas UZH - MSc CBB/636-0702-00L Statistical Models in Computational Biology/Homeworks_GitHub_Linked/hw4")
+GTP_binding_proteins <- parseAlignment("data/GTP_binding_proteins.txt")
+ATPases <- parseAlignment("data/ATPases.txt")
+```
+
+### 2) Use the function `learnHMM()` from "`profileHMM.R`" to parametrise two profile HMMs: one for each protein family (multiple alignment)
+
+```{r}
+parGTP <- learnHMM(GTP_binding_proteins)
+parATP <- learnHMM(ATPases)
+```
+
+### 3) For each family, identify the position(s) with the highest match and with the highest insert emission frequencies over all symbols. Plot the respective match and insert emission frequencies for the identified positions
+
+```{r}
+# Identify which col has the highest freq
+maxMatchGTP <- which(parGTP$mE == max(parGTP$mE, na.rm = TRUE), 
+                     arr.ind = TRUE)
+maxInsertGTP <- which(parGTP$iE == max(parGTP$iE, na.rm = TRUE), 
+                      arr.ind = TRUE)
+
+maxMatchATP <- which(parATP$mE == max(parATP$mE, na.rm = TRUE), 
+                     arr.ind = TRUE)
+maxInsertATP <- which(parATP$iE == max(parATP$iE, na.rm = TRUE), 
+                      arr.ind = TRUE)
+```
+
+```{r}
+#| fig-width: 6
+#| fig-height: 4
+
+# Collect data in one data frame for GTP
+df_GTP <- data.frame(
+  Amino = rownames(parGTP$mE),
+  MatchProb = parGTP$mE[, maxMatchGTP[2]],
+  InsertProb = parGTP$iE[, maxInsertGTP[2]]
+)
+
+# Create plots for match and insertion
+plotMatchGTP <- ggplot(df_GTP, aes(x = MatchProb, y = Amino)) +
+  geom_col() +
+  theme_minimal() +
+  labs(title = paste("Match state at Position", maxMatchGTP[2]),
+       x = "Frequency",
+       y = "Amino Acid") +
+  scale_y_discrete(limits=rev)
+
+plotInsertGTP <- ggplot(df_GTP, aes(x = InsertProb, y = Amino)) +
+  geom_col() +
+  theme_minimal() +
+  labs(title = paste("Insertion state at Position", maxInsertGTP[2]),
+       x = "Frequency",
+       y = "Amino Acid") +
+  scale_y_discrete(limits=rev)
+
+# Combine into one plot
+combinedGTP <- plotMatchGTP + plotInsertGTP + 
+  plot_annotation(
+    title = "GTP Family: Maximum Emission Frequencies",
+    theme = theme(plot.title = element_text(face = "bold", hjust = 0.5))
+  )
+
+combinedGTP
+```
+
+```{r}
+#| fig-width: 6
+#| fig-height: 4
+
+# Collect data in one data frame for ATP
+df_ATP <- data.frame(
+  Amino = rownames(parATP$mE),
+  MatchProb = parATP$mE[, maxMatchATP[2]],
+  InsertProb = parATP$iE[, maxInsertATP[2]]
+)
+
+# Create plots for match and insertion
+plotMatchATP <- ggplot(df_ATP, aes(x = MatchProb, y = Amino)) +
+  geom_col() +
+  theme_minimal() +
+  labs(title = paste("Match state at Position", maxMatchATP[2]),
+       x = "Frequency",
+       y = "Amino Acid") +
+  scale_y_discrete(limits=rev)
+
+plotInsertATP <- ggplot(df_ATP, aes(x = InsertProb, y = Amino)) +
+  geom_col() +
+  theme_minimal() +
+  labs(title = paste("Insertion state at Position", maxInsertATP[2]),
+       x = "Frequency",
+       y = "Amino Acid") +
+  scale_y_discrete(limits=rev)
+
+# Combine into one plot
+combinedATP <- plotMatchATP + plotInsertATP + 
+  plot_annotation(
+    title = "ATP Family: Maximum Emission Frequencies",
+    theme = theme(plot.title = element_text(face = "bold", hjust = 0.5))
+  )
+
+combinedATP
+```
+
+### 4) Complete the forward() function by filling out the recursion step.
+
+```{r}
+#
+# The Forward algorithm
+#
+forward <- function(HMM, seq) {
+  L <- HMM$L
+  mE <- HMM$mE
+  iE <- HMM$iE
+  T <- HMM$T
+  len <- length(seq)
+
+  # Random model: same emission probability for all letters in the alphabet
+  qr <- 1/nrow(mE)
+  # Initialize score matrices for match, insert and delete
+  Fm<- Fi<- Fd<- matrix(-Inf, nrow=len+1, ncol=L+1)
+  # First column for the begin state (M0) (indices get shifted by 1)
+  Fm[1,1]<-0
+
+  # We then allow transitions to I0 and D1 (start with insertion or deletion)
+  for(i in 2:len+1){
+    Fi[i,1] <- log(iE[seq[i-1],1]/qr) +
+      log(T['MI',1]*exp(Fm[i-1,1]) +
+            T['II',1]*exp(Fi[i-1,1]))
+  }
+
+  # i is the pos in the sequence, j is the profile state
+  for(i in 2:(len+1)) {
+    for(j in 2:(L+1)) {
+      ###### your code here to compute
+      #Fm[i, j], Fi[i,j], and Fd[i,j]
+      
+      # Calculate the score for the match state
+      Fm[i,j] = log(mE[seq[i-1],j]/qr) + log(
+        T["MM", j-1] * exp(Fm[i-1, j-1]) 
+        + T["IM", j-1] * exp(Fi[i-1, j-1])
+        + T["DM", j-1] * exp(Fd[i-1, j-1])
+      )
+      
+      # Calculate the score for the insertion state
+      Fi[i,j] = log(iE[seq[i-1],j]/qr) + log(
+        T["MI", j] * exp(Fm[i-1, j]) 
+        + T["II", j] * exp(Fi[i-1, j])
+        + T["DI", j] * exp(Fd[i-1, j])
+      )
+      
+      # Calculate the score for the deletion state
+      Fd[i,j] = log(T["MD", j-1] * exp(Fm[i, j-1]) 
+                    + T["ID", j-1] * exp(Fi[i, j-1]) 
+                    + T["DD", j-1] * exp(Fd[i, j-1]))
+      
+      ###### your code ends
+    }
+  }
+
+  # Termination step: Fe = Fm[len,L+2] = log(P(x|M)/P(x|R))
+  Fe <- log(T['MM',L+1]*exp(Fm[len+1,L+1]) +
+              T['IM',L+1]*exp(Fi[len+1,L+1]) +
+              T['DM',L+1]*exp(Fd[len+1,L+1]))
+  return(Fe)
+}
+```
+
+### 5) The file `Unclassified_proteins.txt` contains 31 protein sequences from unknown families. Load the protein sequences into a list using the `parseProteins()` function from in "`profileHMM.R`".
+
+```{r}
+proteinList <- parseProteins("data/Unclassified_proteins.txt")
+```
+
+### 6) For each unclassified protein $x^{(i)}$ in the list, apply the forward algorithm for both models $M_1$ and $M_2$ to obtain the log odds ratio. Plot the values $q(x^i)$. Which proteins in the list belong to which family? Can you clearly decide for each protein?
+
+```{r}
+# Iterate over the protein sequences and calculate the log odds ratio
+logOdds <- c(rep(0, length(proteinList)))
+
+for (i in seq_along(proteinList)) {
+  logOddsGTP <- forward(parGTP, proteinList[[i]])
+  logOddsATP <- forward(parATP, proteinList[[i]])
+  
+  # Subtract to get the ratio since log
+  logOdds[i] <- logOddsGTP - logOddsATP
+}
+```
+
+```{r}
+# Plot the ratios
+df_ratio <- data.frame(
+  seqNum = seq(1:length(proteinList)),
+  ratio = logOdds
+)
+
+ggplot(df_ratio, aes(x = seqNum, y = ratio, fill = ratio > 0)) +
+  geom_col(color = "black", linewidth = 0.2) +
+  theme_minimal() +
+  scale_fill_manual(
+    name = "Predicted Family:",
+    values = c("TRUE" = "darkred", "FALSE" = "lightblue"),
+    labels = c("TRUE" = "GTP Family (> 0)", "FALSE" = "ATP Family (< 0)")
+  ) +
+  labs(
+    title = "Log Odds Ratios for Unclassified Proteins",
+    x = "Protein Sequence Number",
+    y = "Log Odds Ratio"
+  ) +
+  theme(legend.position = "bottom")
+```
+
+```{r}
+# Create a table for each family prediciton
+df_ratio$Family <- ifelse(df_ratio$ratio > 0, "GTP", "ATP")
+df_ratio$Score <- round(df_ratio$ratio, 3)
+
+gtp_proteins <- df_ratio[df_ratio$Family == "GTP", c("seqNum", "Score")]
+atp_proteins <- df_ratio[df_ratio$Family == "ATP", c("seqNum", "Score")]
+
+# GTP Table
+kable(gtp_proteins, 
+      col.names = c("Sequence number", "Log-Odds score"),
+      align = "c",
+      caption = "Proteins classified as GTP family, positive score",
+      row.names = FALSE)
+
+# ATP Table
+kable(atp_proteins, 
+      col.names = c("Sequence number", "Log-Odds score"),
+      align = "c",
+      caption = "Proteins classified as ATP family, negative score",
+      row.names = FALSE)
+```
+
+The prediction for each protein is visible in the tables above. The decision of which protein belongs to which family is clear in this case, since the log-odds ratio, $q(x^{(i)})$, closest to zero across both families (GTP: `r min(gtp_proteins$Score)`, ATP: `r max(atp_proteins$Score)`) remains far from 0, indicating confident classification for all proteins.
