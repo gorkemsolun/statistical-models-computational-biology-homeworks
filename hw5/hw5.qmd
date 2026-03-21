@@ -22,7 +22,29 @@ format: pdf
 
 ### 1. Time-reversed process transition probabilities
 
+For a time reversed-process:
+
+$$
+\hat T_{kl}(s,t):=Pr\left(\hat X(s+t) = l|\hat X(s) = k\right) = P\left(\hat X(s+t) = l|\hat X(s) = k\right)
+$$
+
+$$
+= P\left(X(\tau-(s+t)) = l| X(\tau - s) = k\right)
+$$ Applying the law of conditional probability: $$ = \frac{P\left(X(\tau-s-t) = l, X(\tau - s) = k\right)}{P( X(\tau - s) = k)} = \frac{P\left(X(\tau-s-t) = l, X(\tau - s) = k\right)}{X(0)}=$$ $$\frac{P\left(X(\tau-s-t) = l, X(\tau - s) = k\right)}{\pi_{k}}=$$The numerator is the probability of reaching the state $l$ at time $\tau-s-t$ (which is earlier than $\tau-s$) times the probability of reaching state $k$ a time $t$ later, given state $l$ was reached beforehand:
+
+$$\frac{P\left(X(\tau-s-t) = l\right) \cdot P\left(X(\tau - s) = k|X(\tau-s-t) = l\right)}{\pi_{k}}=\frac{\pi_{l} \cdot T_{lk}(t)}{\pi_{k}}$$ Therefore: $$\rightarrow \hat T_{kl}(s,t)=\frac{\pi_{l} \cdot T_{lk}(t)}{\pi_{k}}$$
+
 ### 2. Original Markov chain reversability
+
+Knowing $$
+\hat T_{kl}(s,t) = \frac{\pi_{l}\cdot T_{lk}(t)}{\pi_{k}}
+$$ and $$
+\hat T_{kl}(s,t) = \hat T_{kl}(t) \rightarrow \hat T_{kl}(t) = \frac{\pi_{l}\cdot T_{lk}(t)}{\pi_{k}}
+$$ Furthermore, since $$
+\pi_{k}\cdot T_{kl}(t) = \pi_{l}\cdot T_{lk}(t)
+$$ for all $k,l \in [K], t\ge 0$, we can combine the two equations to obtain: $$
+\hat T_{kl}(t) = \frac{\left(\pi_{k}\cdot T_{kl}(t)\right)}{\pi_{k}} = T_{kl}(t) \rightarrow T_{kl}(t) = \hat T_{kl}(t)
+$$
 
 \newpage
 
@@ -30,9 +52,17 @@ format: pdf
 
 ### 1. Summation terms in brute force marginalisation
 
+The joint probability $P(Y,Z|T)$ is as follows:
+
+$$ P(Y,Z|T) = P(Z_{1})\cdot P(Y_{4}|Z_{1})\cdot P(Z_{2}|Z_{1})\cdot P(Y_{3}|Z_{2})\cdot P(Z_{3}|Z_{2})\cdot P(Y_{2}|Z{3})\cdot P(Y_{1}|Z{3})$$
+
+Then, marginalising over $Z$ to obtain $P(Y|T)$: $$ P(Y|T) = \sum_{Z}\left(P(Z_{1})\cdot P(Y_{4}|Z_{1})\cdot P(Z_{2}|Z_{1})\cdot P(Y_{3}|Z_{2})\cdot P(Z_{3}|Z_{2})\cdot P(Y_{2}|Z{3})\cdot P(Y_{1}|Z{3})\right) = $$ $$= \sum_{Z_{1},Z_{2},Z_{3}}\left(P(Z_{1})\cdot P(Y_{4}|Z_{1})\cdot P(Z_{2}|Z_{1})\cdot P(Y_{3}|Z_{2})\cdot P(Z_{3}|Z_{2})\cdot P(Y_{2}|Z{3})\cdot P(Y_{1}|Z{3})\right)$$ Since each hidden variables, $Z_{1}$, $Z_{2}$ and $Z_{3}$, we are marginalising \$ has 4 states ${A,C,G,T}$, there are total of 64 summation terms $$4^{3} = 64$$
+
 ### 2. Summation terms after rearranging with Felsenstein's peeling algorithm.
 
-\newpage
+Rearrangement with Felsenstein's peeling algorithm results as follows
+
+$$ P(Y|T) = \sum_{Z_{1},Z_{2},Z_{3}}\left(P(Z_{1})\cdot P(Y_{4}|Z_{1})\cdot P(Z_{2}|Z_{1})\cdot P(Y_{3}|Z_{2})\cdot P(Z_{3}|Z_{2})\cdot P(Y_{2}|Z{3})\cdot P(Y_{1}|Z{3})\right)$$ $$= \sum_{Z_{1}}\left(P(Z_{1})\cdot P(Y_{4}|Z_{1})\sum_{Z_{2}}\left(P(Z_{2}|Z_{1})\cdot P(Y_{3}|Z_{2})\sum_{Z_{3}}\left(P(Z_{3}|Z_{2})\cdot P(Y_{2}|Z{3})\cdot P(Y_{1}|Z{3})\right)\right)\right)$$ The number of summation terms is: $$ (m-1)*4^{2}+4 $$ where $m$ is the number of internal nodes, or latent variables. Given there are three internal nodes, this results to be 36 summation terms: $$ (3-1)*4^{2}+4 = 36 $$ Significantly less compared to the naive 'brute force' marginalisation. \newpage
 
 ## Problem 14 (data analysis): Learning phylogenetic trees from sequence alignment data
 
@@ -76,7 +106,7 @@ logLik(pml_K80)
 print(pml_K80)
 ```
 
-The log-likelihood of the fitted Kimura model is `{r} logLik(pml_K80)`.
+The log-likelihood of the fitted Kimura model is `r logLik(pml_K80)`.
 
 ### 4. Optimal parameters of Kimura nucleotide substitution model
 
@@ -87,7 +117,23 @@ print(optim1_pml_K80)
 
 ```
 
-The values of the optimised rate matrix (in lower triangular form, upper triangle is identical but mirrored) are: `{r}Q(optim_pml_K80)`. Compared to `{r} Q(pml_K80)` of the unoptimised model.
+The values of the optimised rate matrix are:
+
+| \-  |   a   |   c   |   g   |   t   |
+|-----|:-----:|:-----:|:-----:|:-----:|
+| a   | 0.000 | 1.000 | 5.098 | 1.000 |
+| c   | 1.000 |   0   | 1.000 | 5.098 |
+| g   | 5.098 | 1.000 |   0   | 1.000 |
+| t   | 1.000 | 5.098 | 1.000 |   0   |
+
+Different, compared to those of the unoptimised model:
+
+| \-  |   a   |   c   |   g   |   t   |
+|-----|:-----:|:-----:|:-----:|:-----:|
+| a   | 0.000 | 1.000 | 1.000 | 1.000 |
+| c   | 1.000 |   0   | 1.000 | 1.000 |
+| g   | 1.000 | 1.000 |   0   | 1.000 |
+| t   | 1.000 | 1.000 | 1.000 |   0   |
 
 ### 5. Optimisation of branch lengths, nucleotide substitution rates and tree topology; log likelihood of optimised model
 
@@ -97,14 +143,12 @@ optim2_pml_K80 <- optim.pml(pml_K80, optNni = TRUE, optEdge = TRUE, optQ = TRUE,
 print(optim2_pml_K80)
 ```
 
-The log likelihood of the optimised model is `{r} logLik(optim2_pml_K80)`, higher, indicating a better fit, compared to the firstly optimised model, `{r} logLik(optim1_pml_K80)`, which is higher (better fit) than the starting unoptimised model `{r} logLik(pml_K80)`.
+The log likelihood of the optimised model is `r logLik(optim2_pml_K80)`, higher, indicating a better fit, compared to the firstly optimised model, `r logLik(optim1_pml_K80)`, which is higher (better fit) than the starting unoptimised model `r logLik(pml_K80)`.
 
 ### 6. Bootstrapping
 
 ```{r}
-bs_pml_K80 <- bootstrap.pml(optim2_pml_K80, optNni = TRUE, model = "K80")
-
-print(bs_pml_K80)
+bs_pml_K80 <- bootstrap.pml(optim2_pml_K80, optNni = TRUE, model = "K80", control = pml.control(trace = 0))
 
 ```
 
@@ -115,4 +159,5 @@ It is bootstrapping with replacement the columns of the alignment of the species
 ```{r}
 plotBS(optim2_pml_K80$tree,bs_pml_K80,type = "phylogram",cex = 0.5)
 ```
-The nurse "Mme S" is more likely to have effected "Mme L" because her HIV-virus strain sequence is phylogenetically more similar to that of patient "Mme L" compared to that of "Mr D".
+
+The nurse "Mme S" is more likely to have effected "Mme L" because her HIV-virus strain sequence is phylogenetically more similar to that of patient "Mme L" compared to that of "Mr D" with "Mme L".
