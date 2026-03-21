@@ -20,9 +20,7 @@ format: pdf
 
 ## Problem 12: Intuition on time-reversible Markov chains
 
-
 ### 1. Time-reversed process transition probabilities
-
 
 ### 2. Original Markov chain reversability
 
@@ -49,12 +47,72 @@ ParisRT <- read.dna("ParisRT.txt")
 
 ### 2. Topology tree with three nucleotide substitution models
 
+```{r}
+pd_K80 <- dist.dna(ParisRT, model = "K80")
+pd_TN93 <- dist.dna(ParisRT,model = "TN93")
+pd_JC69 <- dist.dna(ParisRT,model = "JC69")
+
+joined_K80 <- NJ(pd_K80)
+joined_TN93 <- NJ(pd_TN93)
+joined_JC69 <- NJ(pd_JC69)
+
+# cex to decrease the text size
+plot(joined_K80, cex=.7)
+plot(joined_TN93, cex=.7)
+plot(joined_JC69, cex=.7)
+```
+
 ### 3. Log likelihood of Kimura nucleotide substitution model
+
+```{r}
+phyData_K80 <- as.phyDat(ParisRT)
+
+
+
+pml_K80 <- pml(joined_K80, phyData_K80, model= "K80")
+
+logLik(pml_K80)
+
+print(pml_K80)
+```
+
+The log-likelihood of the fitted Kimura model is `{r} logLik(pml_K80)`.
 
 ### 4. Optimal parameters of Kimura nucleotide substitution model
 
+```{r}
+optim1_pml_K80 <- optim.pml(pml_K80, optQ =  TRUE, model = "K80")
+
+print(optim1_pml_K80)
+
+```
+
+The values of the optimised rate matrix (in lower triangular form, upper triangle is identical but mirrored) are: `{r}Q(optim_pml_K80)`. Compared to `{r} Q(pml_K80)` of the unoptimised model.
+
 ### 5. Optimisation of branch lengths, nucleotide substitution rates and tree topology; log likelihood of optimised model
+
+```{r}
+optim2_pml_K80 <- optim.pml(pml_K80, optNni = TRUE, optEdge = TRUE, optQ = TRUE, model = "K80")
+
+print(optim2_pml_K80)
+```
+
+The log likelihood of the optimised model is `{r} logLik(optim2_pml_K80)`, higher, indicating a better fit, compared to the firstly optimised model, `{r} logLik(optim1_pml_K80)`, which is higher (better fit) than the starting unoptimised model `{r} logLik(pml_K80)`.
 
 ### 6. Bootstrapping
 
+```{r}
+bs_pml_K80 <- bootstrap.pml(optim2_pml_K80, optNni = TRUE, model = "K80")
+
+print(bs_pml_K80)
+
+```
+
+It is bootstrapping with replacement the columns of the alignment of the species, or in other words, the nucleotide sites of the alignment.
+
 ### 7. Plotting and guilty nurses
+
+```{r}
+plotBS(optim2_pml_K80$tree,bs_pml_K80,type = "phylogram",cex = 0.5)
+```
+The nurse "Mme S" is more likely to have effected "Mme L" because her HIV-virus strain sequence is phylogenetically more similar to that of patient "Mme L" compared to that of "Mr D".
