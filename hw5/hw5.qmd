@@ -1,0 +1,60 @@
+---
+title: "Homework 5: Statistical Phylogenetics"
+format: pdf
+editor: visual
+---
+
+---
+title: "Homework 5: Statistical Phylogenetics"
+author:
+  - Bernhard Buss
+  - Dario Franzen
+  - Aurimas Greicius
+  - Timothy Lauren Nijhuis
+  - Carlo Rossetto
+  - Yuliyan Slavchev
+  - Görkem Kadir Solun
+date: "March 2026"
+format: pdf
+---
+
+## Problem 12: Intuition on time-reversible Markov chains
+
+
+### 1. Time-reversed process transition probabilities
+
+
+### 2. Original Markov chain reversability
+
+\newpage
+
+## Problem 13: Phylogenetic trees as Bayesian networks
+
+### 1. Summation terms in brute force marginalisation
+
+### 2. Summation terms after rearranging with Felsenstein's peeling algorithm.
+
+\newpage
+
+## Problem 14 (data analysis): Learning phylogenetic trees from sequence alignment data
+
+### 1. Loading alignment data
+
+```{r}
+library(phangorn)
+library(ape)
+
+ParisRT <- read.dna("ParisRT.txt")
+```
+
+### 2. Topology tree with three nucleotide substitution models
+
+### 3. Log likelihood of Kimura nucleotide substitution model
+
+### 4. Optimal parameters of Kimura nucleotide substitution model
+
+### 5. Optimisation of branch lengths, nucleotide substitution rates and tree topology; log likelihood of optimised model
+
+### 6. Bootstrapping
+
+### 7. Plotting and guilty nurses
