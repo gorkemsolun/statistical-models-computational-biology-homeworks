@@ -56,11 +56,11 @@ We can use the distributive law to push the sums inward, evaluating them from th
 
 **Number of summation terms (peeling):**
 
-**Innermost sum (over** $Z_3$): Computed for each of the 4 states of parent $Z_2$. Each sum iterates over the 4 states of $Z_3$. This yields $4 \times 4 = 16$ terms.
+**Innermost sum (over $Z_3$):** Computed for each of the 4 states of parent $Z_2$. Each sum iterates over the 4 states of $Z_3$. This yields $4 \times 4 = 16$ terms.
 
-**Middle sum (over** $Z_2$): Computed for each of the 4 states of parent $Z_1$. Each sum iterates over the 4 states of $Z_2$. This yields $4 \times 4 = 16$ terms.
+**Middle sum (over $Z_2$):** Computed for each of the 4 states of parent $Z_1$. Each sum iterates over the 4 states of $Z_2$. This yields $4 \times 4 = 16$ terms.
 
-**Outermost sum (over** $Z_1$): Iterates over the 4 states of the root $Z_1$. This yields 4 terms.
+**Outermost sum (over $Z_1$):** Iterates over the 4 states of the root $Z_1$. This yields 4 terms.
 
 At most, this algorithm requires $16 + 16 + 4 =$ $36$ summation terms.
 
@@ -120,9 +120,10 @@ fit_k80_optQ <- optim.pml(fit_k80,
                           optRate = FALSE, 
                           optRooted = FALSE)
 
-# Output optimized rate matrix
-cat("Optimized K80 Rate Matrix (Transitions/Transversions):",
-    print(fit_k80_optQ),"\n")
+# Output optimized fit and rate matrix
+print(fit_k80_optQ)
+cat("\nOptimized K80 rate matrix Q:\n")
+print(fit_k80_optQ$Q)
 ```
 
 ### Step 5: Full Optimization
@@ -160,4 +161,4 @@ plotBS(fit_full$tree,
        )
 ```
 
-**Forensic Conclusion:** The nurse closest to the patient "**Mme_L**" is "**Mme S**", thus she is more likely to have infected the patient.
+**Forensic conclusion:** The nurse closest to the patient **Mme_L** is **Mme S**, thus she is more likely to have infected the patient.
