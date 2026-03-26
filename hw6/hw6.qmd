@@ -1,5 +1,5 @@
 ---
-title: "Homework 5: Statistical Phylogenetics"
+title: "Homework 6: Markov chain Monte Carlo"
 author:
   - Bernhard Buss
   - Dario Franzen
@@ -12,153 +12,229 @@ format: pdf
 editor: visual
 ---
 
-## Problem 12: Intuition on time-reversible Markov chains
+```{r}
+set.seed(42)
+```
 
-### Part 1: Transition probabilities of the time-reversed process
+## Problem 15: Markov chain Monte Carlo estimation of the mean
 
-Let $\{X(t), 0 \le t\}$ be a homogeneous continuous-time Markov chain starting from the stationary distribution, meaning $P(X(0) = k) = \pi_k$ for all states. Because the chain starts in the stationary distribution, the marginal probability of being in any state $k$ at *any* time $t$ is $\pi_k$.
+### Part a: Proof that $\overline Y$ is an unbiased estimator of the mean
+Given that
+$$\overline Y = \frac{1}{N}\sum^{N}_{i=1}Y_{n}$$ $$E\left[\overline Y\right]=E\left[\frac{1}{N}\sum^{N}_{n=1}Y_{n}\right]=\frac{1}{N}\sum^{N}_{n=1}E\left[Y_{n}\right]=$$ $$\frac{1}{N}\sum^{N}_{n=1}\mu=\frac{1}{N}N\mu=\mu$$
 
-We define the time-reversed process as $\hat{X}(t) := X(\tau - t)$. We want to find its transition probabilities: $$\hat{T}_{kl}(s,t) = Pr(\hat{X}(s+t) = l \mid \hat{X}(s) = k)$$
+### Part b: Approximation of the variance of $\overline Y$
 
-Substitute the definition of the reversed process: $$\hat{T}_{kl}(s,t) = Pr(X(\tau - (s+t)) = l \mid X(\tau - s) = k)$$
+Knowing that $$Var(\overline Y)=Var\left(\frac{1}{N}\sum^{N}_{n=1}Y_{n}\right)=\frac{Var\left(\sum^{N}_{n=1}Y_{n}\right)}{N^2}=$$ When we start from Bienayme's identity an we are multiplying by $\frac{1}{N^2}$: $$\frac{1}{N^2}Var\left(\sum^{N}_{n=1}Y_{n}\right)=\frac{1}{N^2}\sum^{N}_{i=1}\sum^{N}_{j=1}Cov(Y_{i},Y_{j})=$$ $$\frac{1}{N^2}\left(\sum^{N}_{i=1}Var(Y_{i})+2\sum_{1\le i<j\le N}Cov(Y_{i},Y_{j})\right)=$$ $$\frac{1}{N^2}\left(N\sigma^2+2\sum_{k=1}^{N-1}(N-k)Cov(Y_{n},Y_{n+k})\right)$$Knowing that
 
-By the definition of conditional probability ($P(A|B) = \frac{P(A, B)}{P(B)}$): $$\hat{T}_{kl}(s,t) = \frac{Pr(X(\tau - s - t) = l, X(\tau - s) = k)}{Pr(X(\tau - s) = k)}$$
+$$\rho_k = \frac{Cov(Y_n,Y_{n+k}}{\sigma^2} \implies Cov(Y_n,Y_{n+k})=\sigma^2\rho_k$$
 
-Let $u = \tau - s - t$. Notice that $u$ is the earlier time in the forward process, and $u+t = \tau - s$ is the later time. We rewrite the probabilities in chronological order for the forward process: $$\hat{T}_{kl}(s,t) = \frac{Pr(X(u) = l, X(u+t) = k)}{Pr(X(u+t) = k)}$$
+So
 
-Using the product rule ($P(A,B) = P(A)P(B|A)$), we can expand the numerator: $$\hat{T}_{kl}(s,t) = \frac{Pr(X(u) = l) \cdot Pr(X(u+t) = k \mid X(u) = l)}{Pr(X(u+t) = k)}$$
+$$\frac{1}{N^2}\left(N\sigma^2+2\sum_{k=1}^{N-1}(N-k)Cov(Y_{n},Y_{n+k})\right)=\frac{1}{N^2}\left(N\sigma^2+2\sum_{k=1}^{N-1}(N-k)\sigma^2\rho_k\right)=$$
 
-Because the process is stationary, $Pr(X(u) = l) = \pi_l$ and $Pr(X(u+t) = k) = \pi_k$. Furthermore, the forward conditional probability is just the standard transition matrix $T_{lk}(t)$: $$\hat{T}_{kl}(s,t) = \frac{\pi_l T_{lk}(t)}{\pi_k}$$
+$$\frac{N\sigma^2}{N^2}\left(1+\frac{2}{N}\sum_{k=1}^{N-1}(N-k)\rho_k\right)=\frac{\sigma^2}{N}\left(1+2\left(\frac{1}{N}\sum_{k=1}^{N-1}(N-k)\rho_k\right)\right)$$ Since for large N $$\frac{1}{N}\sum_{k=1}^{N-1}(N-k)\rho_{k}\approx \sum_{k=1}^{\infty}\rho_{k}$$ $$\frac{\sigma^2}{N}\left(1+2\left(\frac{1}{N}\sum_{k=1}^{N-1}(N-k)\rho_k\right)\right)=\frac{\sigma^2}{N}\left(1+2\sum_{k=1}^{\infty}\rho_k\right)$$ Since $$N_{eff}=\frac{N}{1+2\sum_{k=1}^{\infty}\rho_{k}}$$ $$\sigma^2\frac{\left(1+2\sum_{k=1}^{\infty}\rho_{k}\right)}{N}=\frac{\sigma^2}{N_{eff}}\approx Var\left(\overline Y\right)$$
 
-This result depends only on the duration $t$ and not on the specific starting time $s$. Therefore, the time-reversed process is also homogeneous, and we can write: $$\hat{T}_{kl}(t) = \frac{\pi_l T_{lk}(t)}{\pi_k} \quad \square$$
+## Problem 16: Sampling in the Rain Network
 
-### Part 2: Equivalence for time-reversible chains
+### Part a: Joint probability and naive marginalization
 
-Assume the original Markov chain is time-reversible. By definition, this means: $$\pi_k T_{kl}(t) = \pi_l T_{lk}(t)$$
+$$P(C=T|R=T,S=T,W=T) = \frac{P(C=T,R=T,S=T,W=T)}{P(R=T,S=T,W=T)}$$ The nominator: $$P(C=T,R=T,S=T,W=T) = P(W=T|S=T,R=T)*P(S=T|C=T)*P(R=T|C=T)*P(C=T)=$$ $$0.99*0.10*0.80*0.50=0.0396$$ The denominator: $$P(R=T,S=T,W=T) = $$ $$P(W=T|S=T,R=T)*P(S=T|C=T)*P(R=T|C=T)*P(C=T)+$$ $$P(W=T|S=T,R=T)*P(S=T|C=F)*P(R=T|C=F)*P(C=F)=$$ $$0.99*0.10*0.80*0.50+0.99*0.50*0.20*0.50=0.0396+0.0495=0.0891$$ Substituting into the fraction: $$P(C=T|R=T,S=T,W=T) = \frac{P(C=T,R=T,S=T,W=T)}{P(R=T,S=T,W=T)}=$$ $$ \frac{0.0396}{0.0891}=0.\overline{44}=\frac{4}{9}\approx0.444$$
 
-From Part 1, we established that the transition probability of the reversed process is: $$\hat{T}_{kl}(t) = \frac{\pi_l T_{lk}(t)}{\pi_k}$$
+$$P(C=T|R=F,S=T,W=T) = \frac{P(C=T,R=F,S=T,W=T)}{P(R=F,S=T,W=T)}$$ The nominator: $$P(C=T,R=F,S=T,W=T) = P(W=T|S=T,R=F)*P(S=T|C=T)*P(R=F|C=T)*P(C=T)=$$ $$0.90*0.10*(1-0.20)*0.50=0.009$$ The denominator: $$P(R=F,S=T,W=T) = $$ $$P(W=T|S=T,R=F)*P(S=T|C=T)*P(R=F|C=T)*P(C=T)+$$ $$P(W=T|S=T,R=F)*P(S=T|C=F)*P(R=F|C=F)*P(C=F)=$$ $$0.90*0.10*(1-0.80)*0.50+0.90*0.50*(1-0.20)*0.50=0.009+0.180=0.189$$ Substituting into the fraction: $$P(C=T|R=T,S=T,W=T) = \frac{P(C=T,R=T,S=T,W=T)}{P(R=T,S=T,W=T)}=$$ $$ \frac{0.009}{0.189}=0.047619\approx0.048$$ $$P(R=T|C=T,S=T,W=T) = \frac{P(R=T,C=T,S=T,W=T)}{P(C=T,S=T,W=T)}$$ The nominator: $$P(R=T,C=T,S=T,W=T) = P(W=T|S=T,R=T)*P(S=T|C=T)*P(R=T|C=T)*P(C=T)=$$ $$0.99*0.10*0.80*0.50=0.0396$$ The denominator: $$P(C=T,S=T,W=T) = $$ $$P(W=T|S=T,R=T)*P(S=T|C=T)*P(R=T|C=T)*P(C=T)+$$ $$P(W=T|S=T,R=F)*P(S=T|C=T)*P(R=F|C=T)*P(C=T)=$$ $$0.99*0.10*0.80*0.50+0.90*0.10*0.20*0.50=0.0396+0.009=0.0486$$ Substituting into the fraction: $$P(C=T|R=T,S=T,W=T) = \frac{P(C=T,R=T,S=T,W=T)}{P(R=T,S=T,W=T)}=$$ $$ \frac{0.0396}{0.0486}=0.814815\approx0.815$$ $$P(R=T|C=F,S=T,W=T) = \frac{P(R=T,C=F,S=T,W=T)}{P(C=F,S=T,W=T)}$$ The nominator: $$P(R=T,C=F,S=T,W=T) = P(W=T|S=T,R=T)*P(S=T|C=F)*P(R=T|C=F)*P(C=F)=$$ $$0.99*0.50*0.20*0.50=0.0495$$ The denominator: $$P(C=T,S=T,W=T) = $$ $$P(W=T|S=T,R=T)*P(S=T|C=F)*P(R=T|C=F)*P(C=F)+$$ $$P(W=T|S=T,R=F)*P(S=T|C=F)*P(R=F|C=F)*P(C=F)=$$ $$0.99*0.50*0.20*0.50+0.90*0.50*(1-0.20)*0.50=0.0495+0.1800=0.0.2295$$ Substituting into the fraction: $$P(C=T|R=T,S=T,W=T) = \frac{P(C=T,R=T,S=T,W=T)}{P(R=T,S=T,W=T)}=$$ $$ \frac{0.0495}{0.2295}=0.215686\approx0.216$$ In summary: $$P(C=T|R=T,S=T,W=T) \approx 0.444$$ $$P(C=T|R=F,S=T,W=T) \approx 0.048$$ $$P(R=T|C=T,S=T,W=T) \approx 0.815$$ $$P(R=T|C=F,S=T,W=T) \approx 0.216$$
 
-Rearranging the reversibility condition gives us $\frac{\pi_l T_{lk}(t)}{\pi_k} = T_{kl}(t)$. Substituting this into our equation for the reversed process yields: $$\hat{T}_{kl}(t) = T_{kl}(t)$$ This proves that a time-reversible Markov chain looks statistically identical whether viewed forwards or backwards in time. $\square$
-
-## Problem 13: Phylogenetic trees as Bayesian networks
-
-### Part 1: Joint probability and naive marginalization
-
-Based on the directed edges of the Bayesian network $T$, the joint probability factorizes as the product of the probabilities of each node given its parent: $$P(Y, Z \mid T) = P(Z_1) \cdot P(Y_4 \mid Z_1) \cdot P(Z_2 \mid Z_1) \cdot P(Y_3 \mid Z_2) \cdot P(Z_3 \mid Z_2) \cdot P(Y_2 \mid Z_3) \cdot P(Y_1 \mid Z_3)$$
-
-To find the marginal probability $P(Y \mid T)$, we must naively sum over all possible configurations of the hidden variables $Z = (Z_1, Z_2, Z_3)$: $$P(Y \mid T) = \sum_{Z_1} \sum_{Z_2} \sum_{Z_3} P(Z_1)P(Y_4|Z_1)P(Z_2|Z_1)P(Y_3|Z_2)P(Z_3|Z_2)P(Y_2|Z_3)P(Y_1|Z_3)$$
-
-**Number of summation terms (naive):** There are 3 hidden variables ($Z_1, Z_2, Z_3$), and each can take one of 4 nucleotide states (A, C, G, T). To evaluate this naively, we must compute a term for every combination, requiring $4^3 = 64$ summation terms.
-
-### Part 2: Felsenstein's Peeling Algorithm
-
-We can use the distributive law to push the sums inward, evaluating them from the leaves (bottom) to the root (top). $$P(Y \mid T) = \sum_{Z_1} P(Z_1) P(Y_4 \mid Z_1) \left[ \sum_{Z_2} P(Z_2 \mid Z_1) P(Y_3 \mid Z_2) \left[ \sum_{Z_3} P(Z_3 \mid Z_2) P(Y_2 \mid Z_3) P(Y_1 \mid Z_3) \right] \right]$$
-
-**Number of summation terms (peeling):**
-
-**Innermost sum (over $Z_3$):** Computed for each of the 4 states of parent $Z_2$. Each sum iterates over the 4 states of $Z_3$. This yields $4 \times 4 = 16$ terms.
-
-**Middle sum (over $Z_2$):** Computed for each of the 4 states of parent $Z_1$. Each sum iterates over the 4 states of $Z_2$. This yields $4 \times 4 = 16$ terms.
-
-**Outermost sum (over $Z_1$):** Iterates over the 4 states of the root $Z_1$. This yields 4 terms.
-
-At most, this algorithm requires $16 + 16 + 4 =$ $36$ summation terms.
-
-------------------------------------------------------------------------
-
-## Problem 14: Learning phylogenetic trees from sequence alignment data
+### Part b: Gibbs sampler for Bayesian network implementation
 
 ```{r}
-library(ape)
-library(phangorn)
-alignment <- read.dna("ParisRT.txt")
+tot_samples <- 100 
+
+SW_Gibbs_samples <- matrix(0, nrow = 2, ncol = tot_samples) 
+rownames(SW_Gibbs_samples) <- c("C", "R")
+
+# initialising C and R with random starting states
+current_C <- rbinom(1,1,0.5)   # rbinom(n=1, size=1, prob) flips a weighted coin
+current_R <- rbinom(1,1,0.5)
+
+for (n in seq(tot_samples)) {
+  
+  # sample C
+  if (current_R == 1) {
+    prob_C <- 0.444  # P(C=T | R=T, S=T, W=T)
+  } else {
+    prob_C <- 0.048  # P(C=T | R=F, S=T, W=T)
+  }
+
+  current_C <- rbinom(1, 1, prob_C) 
+  
+  # sample R
+  if (current_C == 1) {
+    prob_R <- 0.815  # P(R=T | C=T, S=T, W=T)
+  } else {
+    prob_R <- 0.216  # P(R=T | C=F, S=T, W=T)
+  }
+  current_R <- rbinom(1, 1, prob_R)
+  
+  # recording the current values
+  SW_Gibbs_samples["C", n] <- current_C
+  SW_Gibbs_samples["R", n] <- current_R
+}  
 ```
 
-### Step 2: Initial Tree Topology (Neighbour Joining)
+### Part c: Marginal probability of rain
 
 ```{r}
-# Calculate distances and build NJ trees for the three models
-dist_k80  <- dist.dna(alignment, model = "K80")
-tree_k80  <- NJ(dist_k80)
+count_rain <- rowSums(SW_Gibbs_samples)["R"]
+count_clouds <- rowSums(SW_Gibbs_samples)["C"] # not asked
 
-dist_tn93 <- dist.dna(alignment, model = "TN93")
-tree_tn93 <- NJ(dist_tn93)
+p_rain <- count_rain / tot_samples
+p_clouds <- count_clouds /tot_samples # not asked
 
-dist_jc69 <- dist.dna(alignment, model = "JC69")
-tree_jc69 <- NJ(dist_jc69)
-
-par(mfrow=c(1,3))
-plot(tree_k80, main="NJ: Kimura (1980) (K80)")
-plot(tree_tn93, main="NJ: Tamura and Nei 1993 (TN93)")
-plot(tree_jc69, main="NJ: Jukes and Cantor 1969 (JC69)")
+print(p_rain)
 ```
 
-### Step 3: Fitting the Kimura Model (K80)
+The marginal probability of rain when the sprinkler is on and the grass is wet, $P(R=T|S=T,W=T)$, is `r p_rain`
+
+### Part d: Draw 50,000 samples using the Gibbs sampler
 
 ```{r}
-# Convert data to phyDat format required by phangorn
-phyDat_align <- phyDat(alignment)
+Gibbs_sampler <- function(tot_samples = 50000) {
 
-# Fit the base pml model using K80
-fit_k80 <- pml(tree_k80, phyDat_align, model = "K80")
-
-# Print fit, incl. the loglik:
-print(fit_k80)
+  SW_Gibbs_samples <- matrix(0, nrow = 4, ncol = tot_samples) 
+  rownames(SW_Gibbs_samples) <- c("C", "R","C_T_freq","R_T_freq")
+  
+  # initialising C and R with random starting states
+  current_C <- rbinom(1,1,0.5)   # rbinom(n=1, size=1, prob) flips a weighted coin
+  current_R <- rbinom(1,1,0.5)
+  
+  for (n in seq(tot_samples)) {
+    
+    # sample C
+    if (current_R == 1) {
+      prob_C <- 0.444  # P(C=T | R=T, S=T, W=T)
+    } else {
+      prob_C <- 0.048  # P(C=T | R=F, S=T, W=T)
+    }
+  
+    current_C <- rbinom(1, 1, prob_C) 
+    
+    # sample R
+    if (current_C == 1) {
+      prob_R <- 0.815  # P(R=T | C=T, S=T, W=T)
+    } else {
+      prob_R <- 0.216  # P(R=T | C=F, S=T, W=T)
+    }
+    current_R <- rbinom(1, 1, prob_R)
+    
+    # recording the current values
+    SW_Gibbs_samples["C", n] <- current_C
+    SW_Gibbs_samples["R", n] <- current_R
+    
+    SW_Gibbs_samples["C_T_freq", n] <- rowSums(SW_Gibbs_samples)[1] / n
+    SW_Gibbs_samples["R_T_freq", n] <- rowSums(SW_Gibbs_samples)[2] / n
+  } 
+  
+  return(SW_Gibbs_samples)
+}
 ```
 
-### Step 4: Optimizing the Substitution Rate Matrix (Q)
+### Part e: Relative frequencies of R=T and C=T and burn-in time
 
 ```{r}
-# Optimise ONLY the parameters of the substitution model (optQ)
-fit_k80_optQ <- optim.pml(fit_k80, 
-                          optQ = TRUE, 
-                          optNni = FALSE, 
-                          optBf = FALSE, 
-                          optEdge = FALSE, 
-                          optInv = FALSE, 
-                          optGamma = FALSE, 
-                          optRate = FALSE, 
-                          optRooted = FALSE)
+tot_samples = 50000
 
-# Output optimized fit and rate matrix
-print(fit_k80_optQ)
-cat("\nOptimized K80 rate matrix Q:\n")
-print(fit_k80_optQ$Q)
+run_1_results <- Gibbs_sampler(tot_samples)
+run_2_results <- Gibbs_sampler(tot_samples)
 ```
-
-### Step 5: Full Optimization
 
 ```{r}
-# Optimise topology (optNni), branch lengths (optEdge), and rates (optQ)
-fit_full <- optim.pml(fit_k80, 
-                        optQ = TRUE, 
-                        optNni = TRUE, 
-                        optBf = FALSE, 
-                        optEdge = TRUE, 
-                        optInv = FALSE, 
-                        optGamma = FALSE, 
-                        optRate = FALSE, 
-                        optRooted = FALSE)
+# correct path or remove entirely :)
+setwd("~/My Documents/Carlo/ETH UBas UZH - MSc CBB/636-0702-00L Statistical Models in Computational Biology/Homeworks_GitHub_Linked/hw6")
 
-print(fit_full)
+library(ggplot2)
+
+# Combine the data into a single data frame for ggplot
+parte_plot_data <- data.frame(
+  t = rep(seq(tot_samples), 4),
+  Frequency = c(
+    run_1_results["C_T_freq", ],
+    run_1_results["R_T_freq", ],
+    run_2_results["C_T_freq", ],
+    run_2_results["R_T_freq", ]
+  ),
+  Variable = rep(c("C = True", "R = True", "C = True", "R = True"), each = tot_samples),
+  Run = rep(c("Run 1", "Run 1", "Run 2", "Run 2"), each = tot_samples)
+)
+
+ggplot(parte_plot_data, aes(x = t, y = Frequency, color = Variable, linetype = Run)) +
+  geom_line(linewidth = 0.8, alpha = 0.8) +
+  theme_minimal() +
+  scale_color_manual(values = c("C = True" = "#D55E00", "R = True" = "#0072B2")) +
+  labs(
+    title = "Frequencies of C=True and R=True over time",
+    x = "Iteration (t)",
+    y = "Relative Frequency",
+    color = "Variable",
+    linetype = "Independent Run"
+  ) +
+  theme(
+    legend.position = "right",
+    plot.title = element_text(hjust = 0.5, face = "bold")
+  )
 ```
 
-### Step 6 & 7: Bootstrapping and Forensic Analysis
+Based on the plot above a recommended burning time is 20000 iterations.
 
-**Question**: What exactly is being resampled?
+### Part f: Gelman and Rubin test
 
-**Answer**: The columns (sites) of the multiple sequence alignment are resampled with replacement.
+```{r}
 
-```{r, results="hide"}
-bs <- bootstrap.pml(fit_full, optNni = TRUE, bs = 100)
+library(coda)
+
+# transpose so iterations are rows and select the raw R and C counts
+combined_mcmc <- mcmc.list(mcmc(t(run_1_results[1:2,])),mcmc(t(run_2_results[1:2,])))
+
+gelman.plot(combined_mcmc, main= "Gelman-Rubin Shrink Factor" )
+
+gelman.diag(combined_mcmc)
 ```
 
-```{r fig.width=15, fig.height=10}
-plotBS(fit_full$tree, 
-       bs, 
-       type = "phylogram", 
-       main = "Optimised K80 Tree with Bootstrap"
-       )
+For both varibles after 30000 the difference fo the shrink factor from a value of 1 is negligible, therefore 30000 iteration are recommended for warm-up, or burning.
+
+### Part g: "Rain and Cloudy" plots
+
+```{r}
+acf(run_1_results["C",],type = c("correlation"))
 ```
 
-**Forensic conclusion:** The nurse closest to the patient **Mme_L** is **Mme S**, thus she is more likely to have infected the patient.
+```{r}
+acf(run_1_results["R",],type = c("correlation")) # lagmax parameter (not included, 30 to 40 by default) is with how many neighbours it calculates the auto-correlation function with
+```
+
+After 4 neighbours the autocorrelation function results in a value \< 0.05, therefore the authors would assume that the 5th sample is independent of the first.
+
+### Part h: Estimation of P(R=T\|S=T,W=T)
+
+Burning the first 30,000 sequences and considering only everything 5th sample (thinning)
+
+```{r}
+run_1_raw_burnt <- run_1_results[1:2,30001:50000]
+run_2_raw_burnt <- run_2_results[1:2,30001:50000]
+
+run_1_raw_burnt_thinned <- run_1_raw_burnt[,seq(1,ncol(run_1_raw_burnt),4)]
+run_2_raw_burnt_thinned <- run_2_raw_burnt[,seq(1,ncol(run_2_raw_burnt),4)]
+
+freq_run_1 <- rowMeans(run_1_raw_burnt_thinned)
+freq_run_2 <- rowMeans(run_2_raw_burnt_thinned)
+
+# taking the mean across runs
+parth_R_mean <- mean(c(freq_run_1["R"],freq_run_2["R"]))
+parth_C_mean <- mean(c(freq_run_1["C"],freq_run_2["C"]))
+
+print(freq_run_1)
+print(freq_run_2)
+print(parth_R_mean)
+```
+
+### Part i: Analytical computation of P(R=T\|S=T,W=T) and comparison with c and h
+
+$$P(R=T|S=T,W=T) = \frac{P(R=T,S=T,W=T)}{P(S=T,W=T)}$$ The nominator: $$P(R=T,S=T,W=T) = P(W=T|S=T,R=T)*P(S=T|C=T)*P(R=T|C=T)*P(C=T)+$$ $$P(W=T|S=T,R=T)*P(S=T|C=F)*P(R=T|C=F)*P(C=F)+$$ $$0.99*0.10*0.80*0.50+0.99*0.5*0.2*0.5=0.0396+0.0495=0.0891$$ The denominator: $$P(S=T,W=T) = $$ $$P(W=T|S=T,R=T)*P(S=T|C=T)*P(R=T|C=T)*P(C=T)+$$ $$P(W=T|S=T,R=F)*P(S=T|C=T)*P(R=F|C=T)*P(C=T)+$$ $$P(W=T|S=T,R=T)*P(S=T|C=F)*P(R=T|C=F)*P(C=F)+$$ $$P(W=T|S=T,R=F)*P(S=T|C=F)*P(R=F|C=F)*P(C=F)=$$ $$0.99*0.10*0.80*0.50+0.90*0.10*0.20*0.50+$$ $$0.99*0.5*(1-0.8)*0.5+0.9*0.5*(1-0.2)*0.5=$$ $$ 0.0396+0.009+0.0495+0.18=0.2781$$ Substituting into the fraction: $$P(R=T|S=T,W=T) = \frac{P(R=T,S=T,W=T)}{P(S=T,W=T)}=$$ $$ \frac{0.0891}{0.2781}=0.320388\approx0.320$$\
+In summary, running two runs with 50000 samples (burning 30,000 and thinning by taking every fifth) resulted in a marginal probability of rain given the grass is wet and the sprinkler is on, P(R=T\|W=T,S=T), closer to the analytic truth. Infact, part h (mean of two runs with 50,000 samples) resulted in `r parth_R_mean`, while part c (with 100 samples) results in `r p_rain`, which is further away from the analytic result of 0.320.
