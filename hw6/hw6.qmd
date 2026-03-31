@@ -19,14 +19,14 @@ set.seed(42)
 ## Problem 15: Markov chain Monte Carlo estimation of the mean
 
 ### Part a: Proof that $\overline Y$ is an unbiased estimator of the mean
-Given that
-$$\overline Y = \frac{1}{N}\sum^{N}_{i=1}Y_{n}$$ $$E\left[\overline Y\right]=E\left[\frac{1}{N}\sum^{N}_{n=1}Y_{n}\right]=\frac{1}{N}\sum^{N}_{n=1}E\left[Y_{n}\right]=$$ $$\frac{1}{N}\sum^{N}_{n=1}\mu=\frac{1}{N}N\mu=\mu$$
+
+Given that $$\overline Y = \frac{1}{N}\sum^{N}_{i=1}Y_{n}$$ $$E\left[\overline Y\right]=E\left[\frac{1}{N}\sum^{N}_{n=1}Y_{n}\right]=\frac{1}{N}\sum^{N}_{n=1}E\left[Y_{n}\right]=$$ $$\frac{1}{N}\sum^{N}_{n=1}\mu=\frac{1}{N}N\mu=\mu$$
 
 ### Part b: Approximation of the variance of $\overline Y$
 
 Knowing that $$Var(\overline Y)=Var\left(\frac{1}{N}\sum^{N}_{n=1}Y_{n}\right)=\frac{Var\left(\sum^{N}_{n=1}Y_{n}\right)}{N^2}=$$ When we start from Bienayme's identity an we are multiplying by $\frac{1}{N^2}$: $$\frac{1}{N^2}Var\left(\sum^{N}_{n=1}Y_{n}\right)=\frac{1}{N^2}\sum^{N}_{i=1}\sum^{N}_{j=1}Cov(Y_{i},Y_{j})=$$ $$\frac{1}{N^2}\left(\sum^{N}_{i=1}Var(Y_{i})+2\sum_{1\le i<j\le N}Cov(Y_{i},Y_{j})\right)=$$ $$\frac{1}{N^2}\left(N\sigma^2+2\sum_{k=1}^{N-1}(N-k)Cov(Y_{n},Y_{n+k})\right)$$Knowing that
 
-$$\rho_k = \frac{Cov(Y_n,Y_{n+k}}{\sigma^2} \implies Cov(Y_n,Y_{n+k})=\sigma^2\rho_k$$
+$$\rho_k = \frac{Cov(Y_n,Y_{n+k})}{\sigma^2} \implies Cov(Y_n,Y_{n+k})=\sigma^2\rho_k$$
 
 So
 
@@ -38,9 +38,9 @@ $$\frac{N\sigma^2}{N^2}\left(1+\frac{2}{N}\sum_{k=1}^{N-1}(N-k)\rho_k\right)=\fr
 
 ### Part a: Joint probability and naive marginalization
 
-$$P(C=T|R=T,S=T,W=T) = \frac{P(C=T,R=T,S=T,W=T)}{P(R=T,S=T,W=T)}$$ The nominator: $$P(C=T,R=T,S=T,W=T) = P(W=T|S=T,R=T)*P(S=T|C=T)*P(R=T|C=T)*P(C=T)=$$ $$0.99*0.10*0.80*0.50=0.0396$$ The denominator: $$P(R=T,S=T,W=T) = $$ $$P(W=T|S=T,R=T)*P(S=T|C=T)*P(R=T|C=T)*P(C=T)+$$ $$P(W=T|S=T,R=T)*P(S=T|C=F)*P(R=T|C=F)*P(C=F)=$$ $$0.99*0.10*0.80*0.50+0.99*0.50*0.20*0.50=0.0396+0.0495=0.0891$$ Substituting into the fraction: $$P(C=T|R=T,S=T,W=T) = \frac{P(C=T,R=T,S=T,W=T)}{P(R=T,S=T,W=T)}=$$ $$ \frac{0.0396}{0.0891}=0.\overline{44}=\frac{4}{9}\approx0.444$$
+$$P(C=T|R=T,S=T,W=T) = \frac{P(C=T,R=T,S=T,W=T)}{P(R=T,S=T,W=T)}$$ The numerator: $$P(C=T,R=T,S=T,W=T) = P(W=T|S=T,R=T)*P(S=T|C=T)*P(R=T|C=T)*P(C=T)=$$ $$0.99*0.10*0.80*0.50=0.0396$$ The denominator: $$P(R=T,S=T,W=T) = $$ $$P(W=T|S=T,R=T)*P(S=T|C=T)*P(R=T|C=T)*P(C=T)+$$ $$P(W=T|S=T,R=T)*P(S=T|C=F)*P(R=T|C=F)*P(C=F)=$$ $$0.99*0.10*0.80*0.50+0.99*0.50*0.20*0.50=0.0396+0.0495=0.0891$$ Substituting into the fraction: $$P(C=T|R=T,S=T,W=T) = \frac{P(C=T,R=T,S=T,W=T)}{P(R=T,S=T,W=T)}=$$ $$ \frac{0.0396}{0.0891}=0.\overline{44}=\frac{4}{9}\approx0.444$$
 
-$$P(C=T|R=F,S=T,W=T) = \frac{P(C=T,R=F,S=T,W=T)}{P(R=F,S=T,W=T)}$$ The nominator: $$P(C=T,R=F,S=T,W=T) = P(W=T|S=T,R=F)*P(S=T|C=T)*P(R=F|C=T)*P(C=T)=$$ $$0.90*0.10*(1-0.20)*0.50=0.009$$ The denominator: $$P(R=F,S=T,W=T) = $$ $$P(W=T|S=T,R=F)*P(S=T|C=T)*P(R=F|C=T)*P(C=T)+$$ $$P(W=T|S=T,R=F)*P(S=T|C=F)*P(R=F|C=F)*P(C=F)=$$ $$0.90*0.10*(1-0.80)*0.50+0.90*0.50*(1-0.20)*0.50=0.009+0.180=0.189$$ Substituting into the fraction: $$P(C=T|R=T,S=T,W=T) = \frac{P(C=T,R=T,S=T,W=T)}{P(R=T,S=T,W=T)}=$$ $$ \frac{0.009}{0.189}=0.047619\approx0.048$$ $$P(R=T|C=T,S=T,W=T) = \frac{P(R=T,C=T,S=T,W=T)}{P(C=T,S=T,W=T)}$$ The nominator: $$P(R=T,C=T,S=T,W=T) = P(W=T|S=T,R=T)*P(S=T|C=T)*P(R=T|C=T)*P(C=T)=$$ $$0.99*0.10*0.80*0.50=0.0396$$ The denominator: $$P(C=T,S=T,W=T) = $$ $$P(W=T|S=T,R=T)*P(S=T|C=T)*P(R=T|C=T)*P(C=T)+$$ $$P(W=T|S=T,R=F)*P(S=T|C=T)*P(R=F|C=T)*P(C=T)=$$ $$0.99*0.10*0.80*0.50+0.90*0.10*0.20*0.50=0.0396+0.009=0.0486$$ Substituting into the fraction: $$P(C=T|R=T,S=T,W=T) = \frac{P(C=T,R=T,S=T,W=T)}{P(R=T,S=T,W=T)}=$$ $$ \frac{0.0396}{0.0486}=0.814815\approx0.815$$ $$P(R=T|C=F,S=T,W=T) = \frac{P(R=T,C=F,S=T,W=T)}{P(C=F,S=T,W=T)}$$ The nominator: $$P(R=T,C=F,S=T,W=T) = P(W=T|S=T,R=T)*P(S=T|C=F)*P(R=T|C=F)*P(C=F)=$$ $$0.99*0.50*0.20*0.50=0.0495$$ The denominator: $$P(C=T,S=T,W=T) = $$ $$P(W=T|S=T,R=T)*P(S=T|C=F)*P(R=T|C=F)*P(C=F)+$$ $$P(W=T|S=T,R=F)*P(S=T|C=F)*P(R=F|C=F)*P(C=F)=$$ $$0.99*0.50*0.20*0.50+0.90*0.50*(1-0.20)*0.50=0.0495+0.1800=0.0.2295$$ Substituting into the fraction: $$P(C=T|R=T,S=T,W=T) = \frac{P(C=T,R=T,S=T,W=T)}{P(R=T,S=T,W=T)}=$$ $$ \frac{0.0495}{0.2295}=0.215686\approx0.216$$ In summary: $$P(C=T|R=T,S=T,W=T) \approx 0.444$$ $$P(C=T|R=F,S=T,W=T) \approx 0.048$$ $$P(R=T|C=T,S=T,W=T) \approx 0.815$$ $$P(R=T|C=F,S=T,W=T) \approx 0.216$$
+$$P(C=T|R=F,S=T,W=T) = \frac{P(C=T,R=F,S=T,W=T)}{P(R=F,S=T,W=T)}$$ The numerator: $$P(C=T,R=F,S=T,W=T) = P(W=T|S=T,R=F)*P(S=T|C=T)*P(R=F|C=T)*P(C=T)=$$ $$0.90*0.10*(1-0.80)*0.50=0.009$$ The denominator: $$P(R=F,S=T,W=T) = $$ $$P(W=T|S=T,R=F)*P(S=T|C=T)*P(R=F|C=T)*P(C=T)+$$ $$P(W=T|S=T,R=F)*P(S=T|C=F)*P(R=F|C=F)*P(C=F)=$$ $$0.90*0.10*(1-0.80)*0.50+0.90*0.50*(1-0.20)*0.50=0.009+0.180=0.189$$ Substituting into the fraction: $$P(C=T|R=F,S=T,W=T) = \frac{P(C=T,R=F,S=T,W=T)}{P(R=F,S=T,W=T)}=$$ $$ \frac{0.009}{0.189}=0.047619\approx0.048$$ $$P(R=T|C=T,S=T,W=T) = \frac{P(R=T,C=T,S=T,W=T)}{P(C=T,S=T,W=T)}$$ The numerator: $$P(R=T,C=T,S=T,W=T) = P(W=T|S=T,R=T)*P(S=T|C=T)*P(R=T|C=T)*P(C=T)=$$ $$0.99*0.10*0.80*0.50=0.0396$$ The denominator: $$P(C=T,S=T,W=T) = $$ $$P(W=T|S=T,R=T)*P(S=T|C=T)*P(R=T|C=T)*P(C=T)+$$ $$P(W=T|S=T,R=F)*P(S=T|C=T)*P(R=F|C=T)*P(C=T)=$$ $$0.99*0.10*0.80*0.50+0.90*0.10*0.20*0.50=0.0396+0.009=0.0486$$ Substituting into the fraction: $$P(R=T|C=T,S=T,W=T) = \frac{P(R=T,C=T,S=T,W=T)}{P(C=T,S=T,W=T)}=$$ $$ \frac{0.0396}{0.0486}=0.814815\approx0.815$$ $$P(R=T|C=F,S=T,W=T) = \frac{P(R=T,C=F,S=T,W=T)}{P(C=F,S=T,W=T)}$$ The numerator: $$P(R=T,C=F,S=T,W=T) = P(W=T|S=T,R=T)*P(S=T|C=F)*P(R=T|C=F)*P(C=F)=$$ $$0.99*0.50*0.20*0.50=0.0495$$ The denominator: $$P(C=F,S=T,W=T) = $$ $$P(W=T|S=T,R=T)*P(S=T|C=F)*P(R=T|C=F)*P(C=F)+$$ $$P(W=T|S=T,R=F)*P(S=T|C=F)*P(R=F|C=F)*P(C=F)=$$ $$0.99*0.50*0.20*0.50+0.90*0.50*(1-0.20)*0.50=0.0495+0.1800=0.2295$$ Substituting into the fraction: $$P(R=T|C=F,S=T,W=T) = \frac{P(R=T,C=F,S=T,W=T)}{P(C=F,S=T,W=T)}=$$ $$ \frac{0.0495}{0.2295}=0.215686\approx0.216$$ In summary: $$P(C=T|R=T,S=T,W=T) \approx 0.444$$ $$P(C=T|R=F,S=T,W=T) \approx 0.048$$ $$P(R=T|C=T,S=T,W=T) \approx 0.815$$ $$P(R=T|C=F,S=T,W=T) \approx 0.216$$
 
 ### Part b: Gibbs sampler for Bayesian network implementation
 
@@ -98,8 +98,8 @@ The marginal probability of rain when the sprinkler is on and the grass is wet, 
 ```{r}
 Gibbs_sampler <- function(tot_samples = 50000) {
 
-  SW_Gibbs_samples <- matrix(0, nrow = 4, ncol = tot_samples) 
-  rownames(SW_Gibbs_samples) <- c("C", "R","C_T_freq","R_T_freq")
+  SW_Gibbs_samples <- matrix(0, nrow = 2, ncol = tot_samples)
+  rownames(SW_Gibbs_samples) <- c("C", "R")
   
   # initialising C and R with random starting states
   current_C <- rbinom(1,1,0.5)   # rbinom(n=1, size=1, prob) flips a weighted coin
@@ -127,9 +127,6 @@ Gibbs_sampler <- function(tot_samples = 50000) {
     # recording the current values
     SW_Gibbs_samples["C", n] <- current_C
     SW_Gibbs_samples["R", n] <- current_R
-    
-    SW_Gibbs_samples["C_T_freq", n] <- rowSums(SW_Gibbs_samples)[1] / n
-    SW_Gibbs_samples["R_T_freq", n] <- rowSums(SW_Gibbs_samples)[2] / n
   } 
   
   return(SW_Gibbs_samples)
@@ -151,14 +148,19 @@ setwd("~/My Documents/Carlo/ETH UBas UZH - MSc CBB/636-0702-00L Statistical Mode
 
 library(ggplot2)
 
+run_1_c_freq <- cumsum(run_1_results["C", ]) / seq_len(tot_samples)
+run_1_r_freq <- cumsum(run_1_results["R", ]) / seq_len(tot_samples)
+run_2_c_freq <- cumsum(run_2_results["C", ]) / seq_len(tot_samples)
+run_2_r_freq <- cumsum(run_2_results["R", ]) / seq_len(tot_samples)
+
 # Combine the data into a single data frame for ggplot
 parte_plot_data <- data.frame(
   t = rep(seq(tot_samples), 4),
   Frequency = c(
-    run_1_results["C_T_freq", ],
-    run_1_results["R_T_freq", ],
-    run_2_results["C_T_freq", ],
-    run_2_results["R_T_freq", ]
+    run_1_c_freq,
+    run_1_r_freq,
+    run_2_c_freq,
+    run_2_r_freq
   ),
   Variable = rep(c("C = True", "R = True", "C = True", "R = True"), each = tot_samples),
   Run = rep(c("Run 1", "Run 1", "Run 2", "Run 2"), each = tot_samples)
@@ -181,7 +183,7 @@ ggplot(parte_plot_data, aes(x = t, y = Frequency, color = Variable, linetype = R
   )
 ```
 
-Based on the plot above a recommended burning time is 20000 iterations.
+Based on the trace plot above, a preliminary burn-in of about 20000 iterations seems reasonable.
 
 ### Part f: Gelman and Rubin test
 
@@ -197,7 +199,7 @@ gelman.plot(combined_mcmc, main= "Gelman-Rubin Shrink Factor" )
 gelman.diag(combined_mcmc)
 ```
 
-For both varibles after 30000 the difference fo the shrink factor from a value of 1 is negligible, therefore 30000 iteration are recommended for warm-up, or burning.
+For both variables, after about 30000 iterations the shrink factor is very close to 1, so 30000 iterations are recommended for warm-up (burn-in).
 
 ### Part g: "Rain and Cloudy" plots
 
@@ -213,14 +215,14 @@ After 4 neighbours the autocorrelation function results in a value \< 0.05, ther
 
 ### Part h: Estimation of P(R=T\|S=T,W=T)
 
-Burning the first 30,000 sequences and considering only everything 5th sample (thinning)
+Burning the first 30,000 samples and considering only every 5th sample (thinning)
 
 ```{r}
 run_1_raw_burnt <- run_1_results[1:2,30001:50000]
 run_2_raw_burnt <- run_2_results[1:2,30001:50000]
 
-run_1_raw_burnt_thinned <- run_1_raw_burnt[,seq(1,ncol(run_1_raw_burnt),4)]
-run_2_raw_burnt_thinned <- run_2_raw_burnt[,seq(1,ncol(run_2_raw_burnt),4)]
+run_1_raw_burnt_thinned <- run_1_raw_burnt[,seq(1,ncol(run_1_raw_burnt),5)]
+run_2_raw_burnt_thinned <- run_2_raw_burnt[,seq(1,ncol(run_2_raw_burnt),5)]
 
 freq_run_1 <- rowMeans(run_1_raw_burnt_thinned)
 freq_run_2 <- rowMeans(run_2_raw_burnt_thinned)
@@ -236,5 +238,27 @@ print(parth_R_mean)
 
 ### Part i: Analytical computation of P(R=T\|S=T,W=T) and comparison with c and h
 
-$$P(R=T|S=T,W=T) = \frac{P(R=T,S=T,W=T)}{P(S=T,W=T)}$$ The nominator: $$P(R=T,S=T,W=T) = P(W=T|S=T,R=T)*P(S=T|C=T)*P(R=T|C=T)*P(C=T)+$$ $$P(W=T|S=T,R=T)*P(S=T|C=F)*P(R=T|C=F)*P(C=F)+$$ $$0.99*0.10*0.80*0.50+0.99*0.5*0.2*0.5=0.0396+0.0495=0.0891$$ The denominator: $$P(S=T,W=T) = $$ $$P(W=T|S=T,R=T)*P(S=T|C=T)*P(R=T|C=T)*P(C=T)+$$ $$P(W=T|S=T,R=F)*P(S=T|C=T)*P(R=F|C=T)*P(C=T)+$$ $$P(W=T|S=T,R=T)*P(S=T|C=F)*P(R=T|C=F)*P(C=F)+$$ $$P(W=T|S=T,R=F)*P(S=T|C=F)*P(R=F|C=F)*P(C=F)=$$ $$0.99*0.10*0.80*0.50+0.90*0.10*0.20*0.50+$$ $$0.99*0.5*(1-0.8)*0.5+0.9*0.5*(1-0.2)*0.5=$$ $$ 0.0396+0.009+0.0495+0.18=0.2781$$ Substituting into the fraction: $$P(R=T|S=T,W=T) = \frac{P(R=T,S=T,W=T)}{P(S=T,W=T)}=$$ $$ \frac{0.0891}{0.2781}=0.320388\approx0.320$$\
-In summary, running two runs with 50000 samples (burning 30,000 and thinning by taking every fifth) resulted in a marginal probability of rain given the grass is wet and the sprinkler is on, P(R=T\|W=T,S=T), closer to the analytic truth. Infact, part h (mean of two runs with 50,000 samples) resulted in `r parth_R_mean`, while part c (with 100 samples) results in `r p_rain`, which is further away from the analytic result of 0.320.
+$$P(R=T|S=T,W=T) = \frac{P(R=T,S=T,W=T)}{P(S=T,W=T)}$$ The numerator: $$P(R=T,S=T,W=T) = P(W=T|S=T,R=T)*P(S=T|C=T)*P(R=T|C=T)*P(C=T)+$$ $$P(W=T|S=T,R=T)*P(S=T|C=F)*P(R=T|C=F)*P(C=F)+$$ $$0.99*0.10*0.80*0.50+0.99*0.5*0.2*0.5=0.0396+0.0495=0.0891$$ The denominator: $$P(S=T,W=T) = $$ $$P(W=T|S=T,R=T)*P(S=T|C=T)*P(R=T|C=T)*P(C=T)+$$ $$P(W=T|S=T,R=F)*P(S=T|C=T)*P(R=F|C=T)*P(C=T)+$$ $$P(W=T|S=T,R=T)*P(S=T|C=F)*P(R=T|C=F)*P(C=F)+$$ $$P(W=T|S=T,R=F)*P(S=T|C=F)*P(R=F|C=F)*P(C=F)=$$ $$0.99*0.10*0.80*0.50+0.90*0.10*0.20*0.50+$$ $$0.99*0.5*(1-0.8)*0.5+0.9*0.5*(1-0.2)*0.5=$$ $$ 0.0396+0.009+0.0495+0.18=0.2781$$ Substituting into the fraction: $$P(R=T|S=T,W=T) = \frac{P(R=T,S=T,W=T)}{P(S=T,W=T)}=$$ $$ \frac{0.0891}{0.2781}=0.320388\approx0.320$$\
+In summary, running two runs with 50000 samples (burning 30,000 and thinning by taking every fifth) resulted in a marginal probability of rain given the grass is wet and the sprinkler is on, P(R=T\|W=T,S=T), closer to the analytic truth. In fact, part h (mean of two runs with 50,000 samples) resulted in `r parth_R_mean`, while part c (with 100 samples) results in `r p_rain`, which is further away from the analytic result of 0.320.
+
+```{r}
+comparison_table <- data.frame(
+  Method = c(
+    "Part c: 100 samples",
+    "Part h: 50000 samples with burn-in and thinning",
+    "Part i: analytical result"
+  ),
+  Probability = c(
+    p_rain,
+    parth_R_mean,
+    0.320388
+  )
+)
+
+knitr::kable(
+  comparison_table,
+  digits = 3,
+  col.names = c("Method", "P(R=T | S=T, W=T)"),
+  caption = "Comparison of estimated and analytical probabilities"
+)
+```

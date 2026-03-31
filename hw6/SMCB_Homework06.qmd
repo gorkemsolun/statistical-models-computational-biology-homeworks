@@ -1,0 +1,358 @@
+---
+title: "SMCB_Homework06"
+author:
+  - Bernhard Buss
+  - Dario Franzen
+  - Aurimas Greicius
+  - Timothy Lauren Nijhuis
+  - Carlo Rossetto
+  - Yuliyan Slavchev
+  - Görkem Kadir Solun
+date: 31 March 2026
+format: pdf
+---
+
+# Problem 15
+
+## a) Prove that $\bar{Y}$ is an unbiased estimator of the mean, i.e., $\mathbb{E}[\bar{Y}] = \mu$
+
+Given that $\bar{Y} = \frac{1}{N}\sum_{i=1}^NY_i$:
+$$
+\begin{aligned}
+\mathbb{E}[\bar{Y}] &= \mathbb{E}\left[\frac{1}{N}\sum_{i=1}^NY_i \right] \\
+                    &= \frac{1}{N}\sum_{i=1}^N\mathbb{E}\left[Y_i\right] \\
+                    &= \frac{1}{N}\sum_{i=1}^N\mu \\
+                    &= \frac{1}{N}N\mu \\
+                    &= \mu
+\end{aligned}
+$$
+
+## b) Show that for large $N$ we can approximate the variance of our estimator as $\text{Var}(\bar{Y}) \approx \frac{\sigma^2}{N_{\text{eff}}}$
+Plugging in the definition of $\hat{Y}$ in and pulling out the constant $\frac{1}{N}$:
+$$
+\text{Var}(\bar{Y}) = \text{Var}\left(\frac{1}{N}\sum_{i=1}^NY_i\right) = \frac{1}{N^2}\text{Var}\left(\sum_{i=1}^N Y_i \right)
+$$
+This result is then inserted into the Bienaymé's identity:
+$$
+\frac{1}{N^2}\text{Var}\left(\sum_{i=1}^N Y_i \right) = \frac{1}{N^2}\sum_{i=1}^N\sum_{j=1}^N \text{Cov}\left(Y_i, Y_j\right) = \frac{1}{N^2} \left(\sum_{i=1}^N\text{Var}(Y_i)+2 \sum_{1\leq i< j\leq N} \text{Cov}(Y_i, Y_j)\right)
+$$
+From the task description $\text{Var}(Y_n) = \sigma^2$:
+$$
+\frac{1}{N^2} \left(\sum_{i=1}^N\sigma^2 +2 \sum_{1\leq i< j\leq N} \text{Cov}(Y_i, Y_j)\right) = \frac{1}{N^2} \left(N\sigma^2 +2 \sum_{1\leq i< j\leq N} \text{Cov}(Y_i, Y_j)\right)
+$$
+The general formula for the covariance to correlation conversion:
+$$
+\text{Corr}(X,Y) = \frac{\text{Cov}(X,Y)}{\sqrt{\text{Var}(X)\text{Var}(Y)}}
+$$
+Applying it to the second term in the brackets and replacing $\text{Corr}(Y_i,Y_j)$ by the given definition:
+$$
+\begin{aligned}
+\text{Corr}(Y_i,Y_j)  &= \frac{\text{Cov}(Y_i,Y_j)}{\sqrt{\text{Var}(Y_i)\text{Var}(Y_j)}} \\
+                      &= \frac{\text{Cov}(Y_i,Y_j)}{\sqrt{\sigma^2\sigma^2}} \\
+                      &= \frac{\text{Cov}(Y_i,Y_j)}{\sigma^2} \\
+\text{Cov}(Y_i,Y_j)   &= \sigma^2\text{Corr}(Y_i,Y_j) \\
+\text{Cov}(Y_i,Y_j)   &= \sigma^2 \rho_k \\
+\end{aligned}
+$$
+Plugging it back into the equation and replacing the summation over every individual $i$ and $j$ with the summation over every possible distances $k$ from $1$ up to $N-1$:
+$$
+\begin{aligned}
+\frac{1}{N^2} \left(\sum_{i=1}^N\sigma^2 +2 \sum_{1\leq i< j\leq N} \text{Cov}(Y_i, Y_j)\right) 
+    &= \frac{1}{N^2} \left(N\sigma^2 +2 \sum_{k=1}^{N-1} (N-k)\sigma^2 \rho_k\right) \\
+    &= \frac{\sigma^2}{N} \left(\frac{N}{N} + 2\frac{1}{N} \sum_{k=1}^{N-1} (N-k) \rho_k\right) \\
+    &\approx \frac{\sigma^2}{N} \left(1 + 2 \sum_{k=1}^\infty \rho_k\right) \\
+    &\approx \sigma^2 \frac{1 + 2 \sum_{k=1}^\infty \rho_k}{N} \\
+    &\approx \sigma^2 \left(\frac{N}{1 + 2 \sum_{k=1}^\infty \rho_k}\right)^{-1} \\
+\text{Var}(\bar{Y}) &\approx \frac{\sigma^2}{N_{\text{eff}}}
+\end{aligned}
+$$
+
+
+
+# Problem 16
+
+```{r}
+# Packages
+library(ggplot2)
+library(coda)
+library(knitr)
+```
+
+
+## a) Derive the expressions for $P(C=T\mid R=T, S=T, W=T), P(C=T\mid R=F, S=T, W=T), P(R=T\mid C=T,S=T,W=T)$ and $P(R=T\mid C=F,S=T,W=T)$ and compute their values.
+
+For $P(C=T\mid R=T, S=T, W=T)$:
+$$
+\begin{aligned}
+& P(C=T\mid R=T, S=T, W=T) \\
+&= \frac{P(C=T,S=T,R=T,W=T)}{P(S=T,R=T,W=T)} \\
+                          &= \frac{P(C=T) P(S=T\mid C=T) P(R=T\mid C=T)P(W=T|S=T,R=T)}{\sum_{C\in\{T,F\}} \left(P(C)P(S=T\mid C)P(R=T\mid C) P(W=T\mid S=T,R=T)\right)} \\
+                          &= \frac{P(C=T) P(S=T\mid C=T) P(R=T\mid C=T)}{\sum_{C\in\{T,F\}} \left(P(C)P(S=T\mid C)P(R=T\mid C) \right)} \\
+                          &= \frac{0.50 \cdot 0.10 \cdot 0.80}{0.50 \cdot 0.10 \cdot 0.80 + 0.50 \cdot 0.50 \cdot 0.20} \\
+                          &= \frac{0.04}{0.09} \\
+                          &= 0.444
+\end{aligned}
+$$
+
+For $P(C=T\mid R=F, S=T, W=T)$:
+$$
+\begin{aligned}
+&P(C=T\mid R=F, S=T, W=T) \\
+&= \frac{P(C=T,S=T,R=F,W=T)}{P(S=T,R=F,W=T)} \\
+                          &= \frac{P(C=T) P(S=T\mid C=T) P(R=F\mid C=T)}{\sum_{C\in\{T,F\}} \left(P(C)P(S=T\mid C)P(R=F\mid C) \right)} \\
+                          &= \frac{0.50 \cdot 0.10 \cdot (1-0.80)}{0.50 \cdot 0.10 \cdot (1-0.80) + 0.50 \cdot 0.50 \cdot (1-0.20)} \\
+                          &= \frac{0.01}{0.21} \\
+                          &= 0.048
+\end{aligned}
+$$
+
+For $P(R=T\mid C=T,S=T,W=T)$:
+$$
+\begin{aligned}
+&P(R=T\mid C=T,S=T,W=T) \\
+&= \frac{P(R=T, C=T,S=T,W=T)}{P(C=T,S=T,W=T)} \\
+                        &= \frac{P(R=T\mid C=T) P(C=T) P(S=T\mid C=T) P(W=T\mid S=T, R=T)}{\sum_{R\in\{T,F\}} \left(P(R \mid C=T) P(C=T)P(S=T\mid C=T)P(W=T\mid S=T, R) \right)} \\
+                        &= \frac{P(R=T\mid C=T) P(W=T\mid S=T, R=T)}{\sum_{R\in\{T,F\}} \left(P(R \mid C=T) P(W=T\mid S=T, R) \right)} \\
+                        &= \frac{0.80 \cdot 0.99}{0.80 \cdot 0.99 + (1-0.80) \cdot 0.90} \\
+                        &= \frac{0.792}{0.972} \\
+                        &= 0.815
+\end{aligned}
+$$
+
+For $P(R=T\mid C=F,S=T,W=T)$:
+$$
+\begin{aligned}
+&P(R=T\mid C=F,S=T,W=T)  \\
+&= \frac{P(R=T, C=F,S=T,W=T)}{P(C=F,S=T,W=T)} \\
+                        &= \frac{P(R=T\mid C=F) P(W=T\mid S=T, R=T)}{\sum_{R\in\{T,F\}} \left(P(R \mid C=F) P(W=T\mid S=T, R) \right)} \\
+                        &= \frac{0.20 \cdot 0.99}{0.20 \cdot 0.99 + (1-0.20) \cdot 0.90} \\
+                        &= \frac{0.198}{0.918} \\
+                        &= 0.216
+\end{aligned}
+$$
+
+## b) Implement the Gibbs sampler for the Bayesian network in Figure 1 and draw 100 samples from the joint posterior probability distribution $P(R, C \mid S = T, W = T)$.
+
+```{r}
+# Rewrite as a function for later use
+gibbsSampler <- function(N) {
+  results <- list(
+    C = c(rep(0,N)),
+    R = c(rep(0,N))
+  )
+  
+  # Initial states for C and R
+  currentC <- 0
+  currentR <- 0
+  
+  # Sample/Iterate N times
+  for (i in 1:N) {
+    
+    # Check C, depends only on R
+    if (currentR == 1) {
+      probC <- 0.04/0.09
+    } else {
+      probC <- 0.01/0.21
+    }
+    
+    # Update C
+    currentC <- rbinom(1, 1, probC)
+    
+    # Check R, depends only on C
+    if (currentC == 1) {
+      probR <- 0.792/0.972
+    } else {
+      probR <- 0.198/0.918
+    }
+    
+    # Update R
+    currentR <- rbinom(1, 1, probR)
+    
+    # Save the current values
+    results$C[i] <- currentC
+    results$R[i] <- currentR
+    }
+  
+  return(results)
+}
+```
+
+Call the function for 100 iterations
+```{r}
+it100 <- gibbsSampler(100)
+```
+
+## c) Estimate the marginal probability of rain, given that the sprinkler is on and the grass is wet $P(R = T \mid S = T, W = T)$ from the 100 samples.
+
+```{r}
+# probRain <- sum(it100$R)/length(it100$R)
+probRain <- mean(it100$R)
+print(probRain)
+```
+The marginal probability of rain from the 100 samples is `r probRain`.
+
+## d) Draw 50,000 samples instead of 100 using the Gibbs sampler.
+
+```{r}
+firstIt50000 <- gibbsSampler(50000)
+```
+
+## e) Plot the relative frequencies of $R = T$ and $C = T$ up to each iteration $t$ against $t$, for two independent runs of the sampler. Suggest a burn-in time based on this plot.
+
+```{r}
+secondIt50000 <- gibbsSampler(50000)
+
+# # Make space for relative frequencies
+# firstIt50000$C_freq <- c(rep(0, 50000))
+# firstIt50000$R_freq <- c(rep(0, 50000))
+# 
+# secondIt50000$C_freq <- c(rep(0, 50000))
+# secondIt50000$R_freq <- c(rep(0, 50000))
+# 
+# # Calculate the relative frequencies for each iteration
+# for (i in 1:50000) {
+#   firstIt50000$C_freq[i] <- sum(firstIt50000$C[1:i])/i
+#   firstIt50000$R_freq[i] <- sum(firstIt50000$R[1:i])/i
+#   
+#   secondIt50000$C_freq[i] <- sum(secondIt50000$C[1:i])/i
+#   secondIt50000$R_freq[i] <- sum(secondIt50000$R[1:i])/i
+# }
+
+# Faster with cumsum
+firstIt50000$C_freq <- cumsum(firstIt50000$C)/c(1:50000)
+firstIt50000$R_freq <- cumsum(firstIt50000$R)/c(1:50000)
+
+secondIt50000$C_freq <- cumsum(secondIt50000$C)/c(1:50000)
+secondIt50000$R_freq <- cumsum(secondIt50000$R)/c(1:50000)
+```
+
+```{r}
+# Data frame for C frequencies
+freqC_results <- data.frame(
+  iteration = 1:50000,
+  first = firstIt50000$C_freq,
+  second = secondIt50000$C_freq
+)
+
+# Data frame for R frequencies
+freqR_results <- data.frame(
+  iteration = 1:50000,
+  first = firstIt50000$R_freq,
+  second = secondIt50000$R_freq
+)
+
+ggplot(freqC_results, aes(x = iteration)) +
+  geom_line(aes(y = first), color = "blue", alpha = 0.6) +
+  geom_line(aes(y = second), color = "red", alpha = 0.6) +
+  labs(title = "Relative Frequency of C = T over Iterations",
+       x = "Iteration (t)",
+       y = "Relative Frequency") +
+  theme_minimal()
+```
+Based on the plot for $C=T$ a burn-in time of about 10'000 would be sufficient, but in order to make sure no-effect of the initial fluctuation is captured it can be increased to 15'000.
+
+```{r}
+ggplot(freqR_results, aes(x = iteration)) +
+  geom_line(aes(y = first), color = "blue", alpha = 0.6) +
+  geom_line(aes(y = second), color = "red", alpha = 0.6) +
+  labs(title = "Relative Frequency of R = T over Iterations",
+       x = "Iteration (t)",
+       y = "Relative Frequency") +
+  theme_minimal()
+```
+Based on the plot for $R=T$ a lower burn-in time would be already sufficient compared to $C=T$. But since the suggested burn-in time for $C=T$ is higher this time will be taken and the values of the first 15'000 iteration will be discarded.
+
+## f) Apply the *Gelman and Rubin* test and plot the potential scale reduction factor changes over the iterations using `gelman.plot()` from the `coda` package. This factor measures the ratio of the variances within and between independent runs of the sampler and should be close to $1.0$ for stationary distributions. Suggest a burn-in time based on this plot.
+
+```{r}
+#| fig-width: 8
+#| fig-height: 8
+
+# Create mcmc objects from the two runs
+firstRun_data <- data.frame(C = firstIt50000$C, R = firstIt50000$R)
+mcmcFirst <- as.mcmc(firstRun_data)
+
+secondRun_data <- data.frame(C = secondIt50000$C, R = secondIt50000$R)
+mcmcSecond <- as.mcmc(secondRun_data)
+
+# Combine into mcmc.list
+mcmcCombined <- mcmc.list(mcmcFirst, mcmcSecond)
+
+par(mfrow = c(2, 1))
+gelman.plot(mcmcCombined, auto.layout = FALSE)
+par(mfrow = c(1, 1))
+```
+The plots show that the shrink factor for both variables starts fluctuating above 1 but converges fast towards 1, with only little bumps in higher iterations. From this plot the burn-in suggested previously can be reduced to 10000, since the preventive increase to 15000 as suggested would just lead to loss of data that is not affected by the initial fluctuations.
+
+## g) We expect adjacent members from a Gibbs sampling sequence to be positively correlated, and we can quantify this with the auto-correlation function. The lag-*k* auto-correlation $\rho_k$ is the correlation between every draw and its *k*th neighbouring sample. Use the R function `acf()` to provide plots for both variables Rain and Cloudy. Suggest an interval for drawing approximately independent samples.
+
+```{r}
+#| fig-width: 9
+#| fig-height: 6
+
+# Plot varaibles next to each other
+par(mfrow = c(1, 2))
+
+acf(firstIt50000$C, main = "Cloudy")
+acf(firstIt50000$R, main = "Rain")
+
+par(mfrow = c(1, 1))
+```
+Accordingly to the plots for both variables the interval for drawing approximately independent samples is every 5th sample. Since after the 4th sample the values stay between the blue dashed lines.
+
+## h) Re-estimate $P(R = T \mid S = T, W = T)$ based on samples obtained after the suggested burn-in time and thinning.
+
+```{r}
+# Select the valid index with 10'000 as burn-in and every 5th value
+validInd <- seq(from = 10005, to = 50000, by = 5)
+
+# Extract selected index
+cutFirst <- firstIt50000$R[validInd]
+cutSecond <- secondIt50000$R[validInd]
+
+# Calculate the mean
+finalProb1 <- mean(cutFirst)
+finalProb2 <- mean(cutSecond)
+
+print(finalProb1)
+print(finalProb2)
+```
+After applying a burn-in threshold of 10'000 iterations and an interval of 5 to ensure independent samples, the estimated probability of rain is `r round(finalProb1, 3)` for the first run and `r round(finalProb2, 3)` for the second. Combining both runs yields a final mean probability of `r round(mean(c(finalProb1, finalProb2)), 3)`.
+
+## i) Compute the probability $P(R = T \mid S = T, W = T)$ analytically. Compare with (c) and (h) and comment on your results.¨
+
+$$
+\begin{aligned}
+&P(R=T\mid S=T, W=T) \\
+&= \frac{P(R=T, S=T, W=T)}{P(S=T, W=T)} \\
+                    &= \frac{P(R=T\mid C) P(S=T\mid C) P(W=T\mid R=T,S=T)}{P(S=T\mid C) P(W=T\mid R,S=T)} \\
+                    &= \frac{\sum_{C\in\{T,F\}} \left(P(C)P(R=T\mid C) P(S=T\mid C) P(W=T\mid R=T,S=T)\right)}{\sum_{C\in\{T,F\}}\left( \sum_{R\in\{T,F\}} \left(P(C)P(R\mid C)P(S=T\mid C) P(W=T\mid R,S=T)\right)\right)} \\
+                    &= \frac{P(W=T\mid R=T,S=T)\sum_{C\in\{T,F\}} \left(P(C)P(R=T\mid C) P(S=T\mid C) \right)}{\sum_{C\in\{T,F\}} P(C)P(S=T\mid C)\left(\sum_{R\in\{T,F\}} \left(P(R\mid C) P(W=T\mid R,S=T)\right)\right)} \\
+                    &= \frac{0.99\left[(0.50\cdot 0.80\cdot 0.10) + (0.50\cdot 0.20\cdot 0.50)\right]}{0.50\cdot 0.10 \cdot\left[(0.80\cdot 0.99) + ((1-0.80) \cdot 0.90)\right] + (1-0.50)\cdot 0.50\left[(0.20 \cdot 0.99) + ((1-0.20)\cdot 0.90)\right]} \\
+                    &= \frac{0.0891}{0.2781} \\
+                    &= 0.320
+\end{aligned}
+$$
+
+```{r}
+# Creating a table to compare the values¨
+comparison_table <- data.frame(
+  Method = c(
+    "Task c, 100 iterations",
+    "Task h, 50'000 iterations, with burn-in and every 5th value",
+    "Task i, Analytical solution"
+  ),
+  Probability = c(
+    probRain,
+    mean(c(finalProb1, finalProb2)),
+    0.320
+  )
+)
+
+kable(comparison_table, 
+      digits = 3,
+      col.names = c("Calculation", "P(R=T | S=T, W=T)"), 
+      caption = "Comparing results")
+```
+
+Comparing the three results shows that with an iteration of only 100 results in an inaccurate estimate. But by iterating with a higher number, adjusting for burn-in and correlation between draws gibbs sampling can get very close to the actual analytical result.
