@@ -214,9 +214,15 @@ library(coda)
 # transpose so iterations are rows and select the raw R and C counts
 combined_mcmc <- mcmc.list(mcmc(t(run_1_results[1:2,])),mcmc(t(run_2_results[1:2,])))
 
-gelman.plot(combined_mcmc, main= "Gelman-Rubin Shrink Factor" )
-
 gelman.diag(combined_mcmc)
+```
+
+```{r, fig.height=4.8}
+gelman.plot(combined_mcmc[, "C", drop = FALSE], auto.layout = FALSE, main = "Gelman-Rubin: C")
+```
+
+```{r, fig.height=4.8}
+gelman.plot(combined_mcmc[, "R", drop = FALSE], auto.layout = FALSE, main = "Gelman-Rubin: R")
 ```
 
 The shrink factor drops rapidly to one. For both variables, after about 10,000 iterations the shrink factor is very close to 1, so 10,000 iterations are recommended for warm-up (burn-in). This is lower than the previously proposed 20,000, decreasing the data loss.
