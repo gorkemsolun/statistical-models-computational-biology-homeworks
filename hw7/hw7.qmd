@@ -61,7 +61,7 @@ $$
 \end{aligned}
 $$
 
-### Part b: Derive the variational update for Q(zi)
+### Part b: Derive the variational update for Q(z_i)
 
 Use mean-field:
 
@@ -106,7 +106,7 @@ Q(z_i=k)=\frac{\rho_{ik}}{\sum_{\ell=1}^K\rho_{i\ell}},\qquad
 \sum_{k=1}^KQ(z_i=k)=1.
 $$
 
-### Part c: Derive the variational update for Q(π)
+### Part c: Derive the variational update for Q\[π(pi)\]
 
 Collect terms involving $\pi$:
 
@@ -124,7 +124,7 @@ $$
 \alpha_k=\alpha_{0,k}+\sum_{i=1}^N Q(z_i=k).
 $$
 
-### Part d: Derive the variational update for Q(pk)
+### Part d: Derive the variational update for Q(p_k)
 
 Collect terms involving one $p_k$:
 
@@ -159,101 +159,83 @@ X\mid z_i=k\sim\mathrm{NegBin}(r,p_k),\qquad
 $$
 
 ```{r}
-# Data loading helper
-load_vi_counts <- function(preferred_col = NULL) {
-  csv_candidates <- c("vi.csv", "hw7/vi.csv")
-  csv_path <- csv_candidates[file.exists(csv_candidates)][1]
+# Load data: second column contains ATP6V0E1 counts
+dat <- read.csv("vi.csv")
+x <- dat[[2]]
+N <- length(x)
+cat("N =", N, "| mean =", round(mean(x), 3), "| var =", round(var(x), 3), "\n")
+```
 
-  if (!is.na(csv_path)) {
-    dat <- read.csv(csv_path)
-  } else {
-    stop("vi.csv not found (checked local folder and hw7/).")
+```{r}
+# ELBO computation for the NB mixture CAVI
+compute_elbo <- function(x, resp, alpha, a, b, alpha0_vec, a0, b0, r, K) {
+  N <- length(x)
+
+  # E[log p(pi)] - E[log q(pi)]
+  alpha_sum <- sum(alpha)
+  alpha0_sum <- sum(alpha0_vec)
+  elbo <- lgamma(alpha0_sum) - sum(lgamma(alpha0_vec)) +
+    sum((alpha0_vec - 1) * (digamma(alpha) - digamma(alpha_sum))) -
+    (lgamma(alpha_sum) - sum(lgamma(alpha)))
+
+  # E[log p(p_k)] - E[log q(p_k)]
+  for (k in seq_len(K)) {
+    e_log_pk <- digamma(a[k]) - digamma(a[k] + b[k])
+    e_log_1mpk <- digamma(b[k]) - digamma(a[k] + b[k])
+    elbo <- elbo +
+      (a0 - 1) * e_log_pk + (b0 - 1) * e_log_1mpk -
+      lgamma(a0) - lgamma(b0) + lgamma(a0 + b0) -
+      ((a[k] - 1) * e_log_pk + (b[k] - 1) * e_log_1mpk -
+        lgamma(a[k]) - lgamma(b[k]) + lgamma(a[k] + b[k]))
   }
 
-  # Select count column.
-  if (!is.null(preferred_col) && preferred_col %in% names(dat)) {
-    x <- dat[[preferred_col]]
-  } else {
-    numeric_cols <- vapply(dat, is.numeric, logical(1))
-    if (!any(numeric_cols)) {
-      stop("No numeric column found in input file.")
-    }
+  # E[log p(z|pi)] + E[log p(x|z,p)] - E[log q(z)]
+  elog_pi <- digamma(alpha) - digamma(alpha_sum)
+  elog_p <- digamma(a) - digamma(a + b)
+  elog_1mp <- digamma(b) - digamma(a + b)
 
-    idx <- which(numeric_cols)
-    nms <- names(dat)[idx]
-
-    # Drop index-like columns if possible (typical in exported spreadsheets).
-    index_like <- grepl("^(\\.\\.\\.[0-9]+|id|index|cell(_?id)?)$", tolower(nms))
-    if (any(!index_like)) {
-      idx <- idx[!index_like]
-      nms <- nms[!index_like]
-    }
-
-    # Prefer biologically meaningful names when available.
-    preferred_name <- grepl("atp|count|expr|expression|gene", tolower(nms))
-    if (any(preferred_name)) {
-      idx <- idx[preferred_name]
-    }
-
-    # Final fallback: choose column with smallest unique-ratio (less likely to be row index).
-    unique_ratio <- vapply(
-      dat[idx],
-      function(col) length(unique(col[!is.na(col)])) / sum(!is.na(col)),
-      numeric(1)
-    )
-    x <- dat[[idx[which.min(unique_ratio)]]]
+  for (k in seq_len(K)) {
+    Nk <- resp[, k]
+    elbo <- elbo + sum(Nk * elog_pi[k])
+    elbo <- elbo + sum(Nk * (lchoose(x + r - 1, x) + r * elog_p[k] + x * elog_1mp[k]))
+    safe_log <- ifelse(Nk > 1e-300, log(Nk), 0)
+    elbo <- elbo - sum(Nk * safe_log)
   }
 
-  if (any(is.na(x))) {
-    x <- x[!is.na(x)]
-  }
-
-  x <- as.integer(round(x))
-  if (any(x < 0)) {
-    stop("Counts must be non-negative.")
-  }
-
-  x
+  elbo
 }
 
-# CAVI for NB mixture
-run_nb_vi <- function(x,
-                      K = 2,
-                      r = 10,
-                      a0 = 1,
-                      b0 = 1,
-                      alpha0 = 1,
-                      max_iter = 1000,
-                      tol = 1e-8,
-                      seed = 42) {
+# CAVI for NB mixture (vectorized)
+run_nb_vi <- function(x, K = 2, r = 10, a0 = 1, b0 = 1, alpha0 = 1,
+                      max_iter = 10000, tol = 1e-6, seed = 42) {
   set.seed(seed)
-
   N <- length(x)
   alpha0_vec <- rep(alpha0, K)
 
   # Random uniform initialization for q(z_i = k), row-normalized.
-  resp <- matrix(runif(N * K, min = 0, max = 1), nrow = N, ncol = K)
+  resp <- matrix(runif(N * K), nrow = N, ncol = K)
   resp <- resp / rowSums(resp)
 
   alpha <- alpha0_vec + colSums(resp)
   a <- a0 + r * colSums(resp)
   b <- b0 + colSums(resp * x)
   converged <- FALSE
+  elbo_trace <- numeric(max_iter)
 
   for (iter in seq_len(max_iter)) {
     resp_old <- resp
 
-    # Update q(z_i): use log-space for stability.
+    # Update q(z_i) — vectorized over all observations.
     elog_pi <- digamma(alpha) - digamma(sum(alpha))
     elog_p <- digamma(a) - digamma(a + b)
     elog_1mp <- digamma(b) - digamma(a + b)
 
-    for (i in seq_len(N)) {
-      log_rho <- elog_pi + r * elog_p + x[i] * elog_1mp
-      log_rho <- log_rho - max(log_rho)
-      rho <- exp(log_rho)
-      resp[i, ] <- rho / sum(rho)
-    }
+    # log_rho is N x K: each row = elog_pi + r*elog_p + x_i*elog_1mp
+    log_rho <- outer(rep(1, N), elog_pi + r * elog_p) +
+      outer(x, elog_1mp)
+    log_rho <- log_rho - apply(log_rho, 1, max)
+    resp <- exp(log_rho)
+    resp <- resp / rowSums(resp)
 
     # Update q(pi).
     alpha <- alpha0_vec + colSums(resp)
@@ -261,6 +243,9 @@ run_nb_vi <- function(x,
     # Update q(p_k).
     a <- a0 + r * colSums(resp)
     b <- b0 + colSums(resp * x)
+
+    # ELBO tracking.
+    elbo_trace[iter] <- compute_elbo(x, resp, alpha, a, b, alpha0_vec, a0, b0, r, K)
 
     # Convergence check on responsibilities.
     delta <- max(abs(resp - resp_old))
@@ -270,62 +255,78 @@ run_nb_vi <- function(x,
     }
   }
 
-  # Posterior means as point estimates.
   pi_hat <- alpha / sum(alpha)
   p_hat <- a / (a + b)
   lambda_hat <- r * (1 - p_hat) / p_hat
 
   list(
-    r = r,
-    iterations = iter,
-    converged = converged,
-    alpha = alpha,
-    a = a,
-    b = b,
-    resp = resp,
-    pi_hat = pi_hat,
-    p_hat = p_hat,
-    lambda_hat = lambda_hat
+    r = r, iterations = iter, converged = converged,
+    alpha = alpha, a = a, b = b, resp = resp,
+    pi_hat = pi_hat, p_hat = p_hat, lambda_hat = lambda_hat,
+    elbo_trace = elbo_trace[seq_len(iter)]
   )
 }
+```
 
-# Run for r in {10, 100, 1000}
-# with vague priors a0=b0=alpha0=1
-x <- load_vi_counts()
+```{r}
+# Run for r in {10, 100, 1000} with vague priors a0=b0=alpha0=1
 r_values <- c(10, 100, 1000)
 
-vi_results <- lapply(
-  r_values,
-  function(r) {
-    run_nb_vi(
-      x = x,
-      K = 2,
-      r = r,
-      a0 = 1,
-      b0 = 1,
-      alpha0 = 1,
-      max_iter = 1000,
-      tol = 1e-8,
-      seed = 42
-    )
-  }
-)
+vi_results <- lapply(r_values, function(r) {
+  run_nb_vi(x, K = 2, r = r, a0 = 1, b0 = 1, alpha0 = 1,
+            max_iter = 10000, tol = 1e-6, seed = 42)
+})
 
 # Report p_k, pi_k, lambda_k
-summary_table <- do.call(
-  rbind,
-  lapply(vi_results, function(res) {
-    data.frame(
-      r = res$r,
-      component = seq_along(res$p_hat),
-      p_k = res$p_hat,
-      lambda_k = res$lambda_hat,
-      pi_k = res$pi_hat,
-      iterations = res$iterations,
-      converged = res$converged
-    )
-  })
-)
-
+summary_table <- do.call(rbind, lapply(vi_results, function(res) {
+  data.frame(
+    r = res$r,
+    component = seq_along(res$p_hat),
+    p_k = round(res$p_hat, 6),
+    lambda_k = round(res$lambda_hat, 4),
+    pi_k = round(res$pi_hat, 4),
+    iterations = res$iterations,
+    converged = res$converged
+  )
+}))
+rownames(summary_table) <- NULL
 summary_table
+```
+
+```{r}
+# ELBO convergence plots
+par(mfrow = c(1, 3))
+for (res in vi_results) {
+  plot(res$elbo_trace, type = "l", col = "steelblue",
+       xlab = "Iteration", ylab = "ELBO",
+       main = paste0("r = ", res$r))
+}
+```
+
+```{r}
+# Histogram of data with fitted NB mixture densities
+par(mfrow = c(1, 3))
+x_vals <- 0:max(x)
+for (res in vi_results) {
+  hist(x, breaks = seq(-0.5, max(x) + 0.5, by = 1), freq = FALSE,
+       col = "grey85", border = "white",
+       main = paste0("r = ", res$r),
+       xlab = "Count", ylab = "Density")
+  mix_dens <- numeric(length(x_vals))
+  colors <- c("red", "blue")
+  for (k in seq_along(res$p_hat)) {
+    dens_k <- dnbinom(x_vals, size = res$r, prob = res$p_hat[k])
+    lines(x_vals, res$pi_hat[k] * dens_k, col = colors[k], lwd = 2)
+    mix_dens <- mix_dens + res$pi_hat[k] * dens_k
+  }
+  lines(x_vals, mix_dens, col = "black", lwd = 2, lty = 2)
+  legend("topright", cex = 0.7,
+         legend = c(
+           bquote(lambda[1] == .(round(res$lambda_hat[1], 2)) ~ ", " ~
+                    pi[1] == .(round(res$pi_hat[1], 2))),
+           bquote(lambda[2] == .(round(res$lambda_hat[2], 2)) ~ ", " ~
+                    pi[2] == .(round(res$pi_hat[2], 2))),
+           "Mixture"),
+         col = c("red", "blue", "black"), lwd = 2, lty = c(1, 1, 2))
+}
 ```
