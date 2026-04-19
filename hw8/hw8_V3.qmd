@@ -1,0 +1,266 @@
+---
+title: "Homework 8: Structured sparsity in genetics"
+author:
+  - Bernhard Buss
+  - Dario Franzen
+  - Aurimas Greicius
+  - Timothy Lauren Nijhuis
+  - Carlo Rossetto
+  - Yuliyan Slavchev
+  - Görkem Kadir Solun
+format: pdf
+editor: visual
+---
+
+```{r}
+set.seed(42)
+```
+
+## Problem 19: Exponential family of the negative binomial distribution
+
+### Part a: Proof that the negative binomial distribution belongs to the exponential family and definition of all its components.
+
+A distribution belongs to the exponential family if its density can be written as: $$
+p(y|\theta) = \exp(\eta(\theta)\tau(y) + h(y) - \alpha(\theta))
+$$ or in its canonical form as: $$
+p(y|\eta) =\exp(\eta\tau(y) + h(y) - \alpha(\theta))
+$$ The negative binomial distribution can be rewritten as: $$
+\begin{aligned}
+f(x|p) &= \binom{x+r-1}{x}p^{x}(1-p)^{r} \\\\
+&= \frac{(x+r-1)!}{x!(x+r-1-x)!}p^{x}(1-p)^{r} \\\\
+&=\frac{(x+r-1)!}{x!(r-1)!}p^{x}(1-p)^{r} \\ \\
+&= \exp\left[\ln\left(\frac{(x+r-1)!}{x!(r-1)!}p^{x}(1-p)^{r}\right)\right] \\ \\
+&= \exp\left[\ln((x+r-1)!)-\ln(x!)-\ln((r-1)!)+x\ln(p)+r\ln(1-p)\right] \\ \\
+&= \exp\left[\underbrace{x}_{\tau(x)}\underbrace{\ln(p)}_{\eta(p)}+\underbrace{\ln((x+r-1)!)-\ln(x!)}_{h(x)}-\underbrace{(\ln((r-1)!)-r\ln(1-p))}_{\alpha(p)}\right] \\ \\
+\implies p(x|p) &= \exp\left[\eta(p)\tau(x)+h(x)-\alpha(p)\right]
+\end{aligned}
+$$ To summarise: $$
+\begin{aligned}
+\eta(p) &= \ln(p) \\
+\tau(x) &= x \\
+h(x) &=  \ln((x+r-1)!) - \ln(x!)\\
+\alpha(p) &= \ln((r-1)!)-r\ln(1-p)
+\end{aligned}
+$$
+Alternatively, the term $\ln((r-1)!)$, which does not depend on $p$ or $x$, and is therefore constant, could also be included in $h(x)$ as $-\ln((r-1)!)$
+
+### Part b: Expected value manipulation and derivation
+
+Now, we derive the expected value of a Negative Binomial random variable. We first apply the definition of expected value for a discrete probability distribution:
+
+$$
+\begin{aligned}
+\sum_{x=1}^{\infty} x f(x|p) &= \sum_{x=1}^{\infty} {x+r - 1 \choose x} p^x (1-p)^r x \\ \\ &= \sum_{x=1}^{\infty} \frac{(x+r-1)!}{x! (r-1)!} p^x (1-p)^r x \\ \\ &= 
+\frac{(1-p)^r}{(r-1)!} \sum_{x=1}^{\infty} \frac{(x+r-1)!}{(x-1)!} p^x 
+\end{aligned}
+$$
+
+Substituting $y=x-1$ yields:
+
+$$
+\begin{aligned}
+&= \frac{(1-p)^r}{(r-1)!} \sum_{y=0}^{\infty} \frac{(y+r)!}{y!} p^{y+1} \\ \\
+&= \frac{rp}{(1-p)} \sum_{y=0}^{\infty} \frac{(y+r)!}{y!r!} p^y (1-p)^{r+1} \\ \\
+&= \frac{rp}{(1-p)} \underbrace{\sum_{y=0}^{\infty} {y+(r+1) - 1 \choose y} p^y (1-p)^{r+1}}_{=1}
+\end{aligned}
+$$
+
+Notice that the term inside of the brackets corresponds to the density function of a Negative Binomial distribution $\text{NB}(r+1,p)$ . We are summing this over all supported values of the distribution, which equals to $1$ according to the definition of a density function.
+
+From this, we conclude that the expected value of a Negative Binomial random variable is:
+
+$$
+\mathbb{E}[X] = \frac{rp}{(1-p)}
+$$
+
+Rewriting the exponential family formulation in terms of the expected value: $$
+\mathbb{E}[X] = \frac{rp}{(1-p)} = \mu \\
+\implies rp = \mu - \mu p \\
+\implies p  = \frac{\mu}{r+\mu}
+$$ For this definition of p, also $1-p$ can be derived: $$
+1-p=1-\frac{\mu}{r+\mu}=\frac{r+\mu-\mu}{r+\mu}=\frac{r}{r+\mu}
+$$ Substituting these results into the exponential form: $$ 
+\begin{aligned}
+f(x|p) 
+&= \exp\left[\underbrace{x}_{\tau(x)}\underbrace{\ln(p)}_{\eta(p)}+\underbrace{\ln((x+r-1)!)-\ln(x!)}_{h(x)}-\underbrace{\left(\ln((r-1)!)-r\ln\left(1-p\right)\right)}_{\alpha(p)}\right] \\ \\
+\implies f(x|\mu) &= \exp\left[\underbrace{x}_{\tau(x)}\underbrace{\ln\left(\frac{\mu}{r+\mu}\right)}_{\eta(\mu)}+\underbrace{\ln((x+r-1)!)-\ln(x!)}_{h(x)}-\underbrace{\left(\ln((r-1)!)-r\ln\left(\frac{r}{r+\mu}\right)\right)}_{\alpha(\mu)}\right]
+\end{aligned} 
+$$
+
+## Problem 20: Sparsity and metabolic engineering in B. subtilis
+
+### Part a: Data preparation
+
+```{r}
+suppressPackageStartupMessages(library("glmnet"))
+
+# loading the data
+riboflavin <- read.csv("riboflavin.csv")
+dim(riboflavin)
+```
+
+```{r}
+set.seed(42)
+
+# splitting into training and test set
+
+samples <- sample(c(TRUE,FALSE), nrow(riboflavin), replace = TRUE, prob = c(0.7,0.3))
+
+r_train <- riboflavin[samples,]
+r_test <- riboflavin[!samples,]
+
+x_train <- as.matrix(subset(r_train, select = -y))
+y_train <- as.numeric(r_train$y) # cv.glmnet expects a list, not a matrix, so no subset function and as.matrix() and as.numeric are required.
+
+x_test <- as.matrix(subset(r_test, select = -y))
+y_test <- as.numeric(r_test$y)
+
+dim(x_train)
+```
+
+### Part b: Model fitting
+
+### Part c: Sparsity and performance
+
+Part b and c are completed together below.
+
+```{r}
+# creating a matrix that will hold alphas and all results
+model_alphas <- c(1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 0.0, 0.0, 0.0)
+res <- array(model_alphas, dim = c(4,3))
+colnames(res) <- c("Lasso regression", "Ridge regression", "Elastic net")
+rownames(res) <- c("alpha", "optimal lambda", "number of non-zero coefficients", "MSE on test set")
+```
+
+```{r}
+for (model in colnames(res)) {
+  cv_model <- cv.glmnet(x_train,y_train, alpha = res[1, model], nfolds = 10) #could add type.measure = "mse" as well
+  print(cv_model)
+  
+  # part b, optimal lambda
+  cat("Optimal lambda for", model, " is", cv_model$lambda.min,".\n")
+  res[2, model] <- cv_model$lambda.min
+  
+  plot(cv_model)
+
+  # part c, non zero coefficient (expect intercept)
+  res[3, model] <- cv_model$nzero[cv_model$lambda == cv_model$lambda.min]
+  
+  # part c, MSE of prediction on test set
+  test_pred <- predict(cv_model,newx = x_test, s = "lambda.min")
+  res[4,model] <- sum((test_pred - y_test)^2)/length(test_pred)
+  
+}
+```
+
+```{r}
+print(res)
+```
+
+Ridge regression obtain the lowest mean squared error (MSE) 0.247, of the three models. However, as per definition, it does not drive any of the coefficients to zero. Infact, it has 4088 non zero coefficients, while in comparison lasso regression has only 31, which lead to a worse MSE of 0.31. Elastic net, which is a combination of the models, is sensibly in between: it results in 40 non zero coefficients, more than lasso, and many fewer than ridge, and an MSE of 0.283, again in between the three.
+
+## Problem 21: Identification of protein-protein interaction networks via the graphical lasso
+
+### Part a: Raw data loading
+
+```{r}
+
+#loading the data
+pe_wX <- read.csv("proteinexpression.csv")
+pe <- subset(pe_wX, select = -X)
+protein_names <- colnames(pe)
+
+```
+
+### Part b: Lasso model fitting
+
+```{r}
+# creating the structure for a matrix that will hold the coefficients for the model with the different protein combinations
+coefs <- matrix(0.0, nrow = 12, ncol = length(protein_names))
+colnames(coefs) <- protein_names
+rownames(coefs) <- c("intercept",protein_names)
+
+i <- 2
+
+for (protein in protein_names) {
+  prot_idx_bool <- protein == protein_names
+  x_train <- as.matrix(pe[,!prot_idx_bool]) # all other proteins as covariates/features
+  y_train <- as.numeric(pe[,prot_idx_bool]) # setting the protein expression to be predicted
+  
+  cv_model <- cv.glmnet(x_train, y_train, alpha = 1, nfolds = 5)
+  
+  coef_set <- coef(cv_model, s = "lambda.1se")
+
+  # these next three lines are change the indices of the coefficients from the model in order to store them correctly in the matrix
+  idx_to_inc <- i <= (c(coef_set@i) + 1)
+  coef_idx <- c(coef_set@i) + 1
+  coef_idx[idx_to_inc] <- coef_idx[idx_to_inc] + 1
+
+#  print(coefs[c(coef_idx),protein])
+  coefs[c(coef_idx),protein] <- c(coef_set@x)
+  i <- i + 1
+}
+
+```
+
+```{r}
+# creating the structure for a matrix that will hold the coefficients for the model with the different protein combinations
+coefs <- matrix(0.0, nrow = 12, ncol = length(protein_names))
+colnames(coefs) <- protein_names
+rownames(coefs) <- c("(Intercept)",protein_names)
+
+for (protein in protein_names) {
+  prot_idx_bool <- protein == protein_names
+  x_train <- as.matrix(pe[,!prot_idx_bool]) # all other proteins as covariates/features
+  y_train <- as.numeric(pe[,prot_idx_bool]) # setting the protein expression to be predicted
+  
+  cv_model <- cv.glmnet(x_train, y_train, alpha = 1, nfolds = 5)
+  
+  coef_set <- coef(cv_model, s = "lambda.1se")
+
+  # saving the coefficients calculated in the correct rows of the matrix
+  dense_coefs <- as.matrix(coef_set)
+  coefs[rownames(dense_coefs), protein] <- dense_coefs[, 1]
+}
+
+```
+
+```{r}
+coefs
+```
+
+### Part c: Building the interaction matrix
+
+```{r}
+# creating the interaction matrix im
+im <- matrix(0, nrow = length(protein_names), ncol = length(protein_names))
+colnames(im) <- protein_names
+rownames(im) <- protein_names
+
+# filling the interaction matrix (both the upper and lower triangle), the same protein is not assumed to promote itself, so the diagonal = 0
+for (protein in protein_names) {
+  for (protein_2 in protein_names) {
+    if (protein != protein_2) {
+      if ((coefs[protein,protein_2] != 0) & (coefs[protein_2,protein] != 0)) {
+        im[protein,protein_2] <- 1
+        im[protein_2,protein] <- 1
+      }
+    }
+  }
+}
+```
+
+```{r}
+im
+```
+
+### Part d: Network plotting
+
+```{r}
+
+source("plotcirculargraph.R")
+plot_circular_graph(im)
+
+```
+
+From the interaction graph it appears that PIP2 is the protein that interacts with the least number of other proteins, 3, while Jnk is the protein that interacts with the most: 8.
