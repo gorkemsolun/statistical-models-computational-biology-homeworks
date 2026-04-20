@@ -41,8 +41,7 @@ $$ To summarise: $$
 h(x) &=  \ln((x+r-1)!) - \ln(x!)\\
 \alpha(p) &= \ln((r-1)!)-r\ln(1-p)
 \end{aligned}
-$$
-Alternatively, the term $\ln((r-1)!)$, which does not depend on $p$ or $x$, and is therefore constant, could also be included in $h(x)$ as $-\ln((r-1)!)$
+$$ Alternatively, the term $\ln((r-1)!)$, which does not depend on $p$ or $x$, and is therefore constant, could also be included in $h(x)$ as $-\ln((r-1)!)$
 
 ### Part b: Expected value manipulation and derivation
 
@@ -84,8 +83,10 @@ $$ Substituting these results into the exponential form: $$
 f(x|p) 
 &= \exp\left[\underbrace{x}_{\tau(x)}\underbrace{\ln(p)}_{\eta(p)}+\underbrace{\ln((x+r-1)!)-\ln(x!)}_{h(x)}-\underbrace{\left(\ln((r-1)!)-r\ln\left(1-p\right)\right)}_{\alpha(p)}\right] \\ \\
 \implies f(x|\mu) &= \exp\left[\underbrace{x}_{\tau(x)}\underbrace{\ln\left(\frac{\mu}{r+\mu}\right)}_{\eta(\mu)}+\underbrace{\ln((x+r-1)!)-\ln(x!)}_{h(x)}-\underbrace{\left(\ln((r-1)!)-r\ln\left(\frac{r}{r+\mu}\right)\right)}_{\alpha(\mu)}\right]
-\end{aligned} 
+\end{aligned}
 $$
+
+Note that the natural parameter $\eta$ is not the identity link of $\mu$ for the Negative Binomial: the notation "$\eta := \mu$" in the exercise is understood as a reparameterization in terms of $\mu = \mathbb{E}[X]$, yielding $\eta(\mu) = \ln\!\left(\tfrac{\mu}{r+\mu}\right)$.
 
 ## Problem 20: Sparsity and metabolic engineering in B. subtilis
 
@@ -147,8 +148,8 @@ for (model in colnames(res)) {
   res[3, model] <- cv_model$nzero[cv_model$lambda == cv_model$lambda.min]
   
   # part c, MSE of prediction on test set
-  test_pred <- predict(cv_model,newx = x_test, s = "lambda.min")
-  res[4,model] <- sum((test_pred - y_test)^2)/length(test_pred)
+  test_pred <- predict(cv_model, newx = x_test, s = "lambda.min")
+  res[4, model] <- mean((test_pred - y_test)^2)
   
 }
 ```
@@ -175,54 +176,24 @@ protein_names <- colnames(pe)
 ### Part b: Lasso model fitting
 
 ```{r}
-# creating the structure for a matrix that will hold the coefficients for the model with the different protein combinations
-coefs <- matrix(0.0, nrow = 12, ncol = length(protein_names))
+# matrix to hold the coefficients: rows = (Intercept) + all proteins, columns = response protein
+coefs <- matrix(0.0, nrow = length(protein_names) + 1, ncol = length(protein_names))
 colnames(coefs) <- protein_names
-rownames(coefs) <- c("intercept",protein_names)
-
-i <- 2
+rownames(coefs) <- c("(Intercept)", protein_names)
 
 for (protein in protein_names) {
   prot_idx_bool <- protein == protein_names
-  x_train <- as.matrix(pe[,!prot_idx_bool]) # all other proteins as covariates/features
-  y_train <- as.numeric(pe[,prot_idx_bool]) # setting the protein expression to be predicted
-  
+  x_train <- as.matrix(pe[, !prot_idx_bool]) # all other proteins as predictors
+  y_train <- as.numeric(pe[, prot_idx_bool]) # response: the selected protein
+
   cv_model <- cv.glmnet(x_train, y_train, alpha = 1, nfolds = 5)
-  
   coef_set <- coef(cv_model, s = "lambda.1se")
 
-  # these next three lines are change the indices of the coefficients from the model in order to store them correctly in the matrix
-  idx_to_inc <- i <= (c(coef_set@i) + 1)
-  coef_idx <- c(coef_set@i) + 1
-  coef_idx[idx_to_inc] <- coef_idx[idx_to_inc] + 1
-
-#  print(coefs[c(coef_idx),protein])
-  coefs[c(coef_idx),protein] <- c(coef_set@x)
-  i <- i + 1
-}
-
-```
-
-```{r}
-# creating the structure for a matrix that will hold the coefficients for the model with the different protein combinations
-coefs <- matrix(0.0, nrow = 12, ncol = length(protein_names))
-colnames(coefs) <- protein_names
-rownames(coefs) <- c("(Intercept)",protein_names)
-
-for (protein in protein_names) {
-  prot_idx_bool <- protein == protein_names
-  x_train <- as.matrix(pe[,!prot_idx_bool]) # all other proteins as covariates/features
-  y_train <- as.numeric(pe[,prot_idx_bool]) # setting the protein expression to be predicted
-  
-  cv_model <- cv.glmnet(x_train, y_train, alpha = 1, nfolds = 5)
-  
-  coef_set <- coef(cv_model, s = "lambda.1se")
-
-  # saving the coefficients calculated in the correct rows of the matrix
+  # place each coefficient in the row matching its predictor name;
+  # the diagonal entry (protein as its own predictor) stays 0 by construction
   dense_coefs <- as.matrix(coef_set)
   coefs[rownames(dense_coefs), protein] <- dense_coefs[, 1]
 }
-
 ```
 
 ```{r}
