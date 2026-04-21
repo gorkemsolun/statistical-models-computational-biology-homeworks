@@ -12,9 +12,6 @@ format: pdf
 editor: visual
 ---
 
-```{r}
-set.seed(42)
-```
 
 ## Problem 19: Exponential family of the negative binomial distribution
 
@@ -95,9 +92,9 @@ Note that the natural parameter $\eta$ is not the identity link of $\mu$ for the
 ```{r}
 suppressPackageStartupMessages(library("glmnet"))
 
+
 # loading the data
 riboflavin <- read.csv("riboflavin.csv")
-dim(riboflavin)
 ```
 
 ```{r}
@@ -115,8 +112,6 @@ y_train <- as.numeric(r_train$y) # cv.glmnet expects a list, not a matrix, so no
 
 x_test <- as.matrix(subset(r_test, select = -y))
 y_test <- as.numeric(r_test$y)
-
-dim(x_train)
 ```
 
 ### Part b: Model fitting
@@ -134,8 +129,10 @@ rownames(res) <- c("alpha", "optimal lambda", "number of non-zero coefficients",
 ```
 
 ```{r}
+set.seed(42)
+
 for (model in colnames(res)) {
-  cv_model <- cv.glmnet(x_train,y_train, alpha = res[1, model], nfolds = 10) #could add type.measure = "mse" as well
+  cv_model <- cv.glmnet(x_train,y_train, alpha = res[1, model], nfolds = 10)
   print(cv_model)
   
   # part b, optimal lambda
@@ -158,7 +155,7 @@ for (model in colnames(res)) {
 print(res)
 ```
 
-Ridge regression obtain the lowest mean squared error (MSE) 0.247, of the three models. However, as per definition, it does not drive any of the coefficients to zero. Infact, it has 4088 non zero coefficients, while in comparison lasso regression has only 31, which lead to a worse MSE of 0.31. Elastic net, which is a combination of the models, is sensibly in between: it results in 40 non zero coefficients, more than lasso, and many fewer than ridge, and an MSE of 0.283, again in between the three.
+Ridge regression obtains the lowest mean squared error (MSE), 0.247, of the three models. However, as per definition, it does not drive any of the coefficients to zero. Infact, it has 4088 non zero coefficients, while in comparison lasso regression has only 26, which results in a worse MSE of 0.330. Elastic net, which is a combination of the models, is sensibly in between: it results in 48 non zero coefficients, more than lasso, and many fewer than ridge, and an MSE of 0.294, again in between the three.
 
 ## Problem 21: Identification of protein-protein interaction networks via the graphical lasso
 
@@ -176,6 +173,8 @@ protein_names <- colnames(pe)
 ### Part b: Lasso model fitting
 
 ```{r}
+set.seed(42)
+
 # matrix to hold the coefficients: rows = (Intercept) + all proteins, columns = response protein
 coefs <- matrix(0.0, nrow = length(protein_names) + 1, ncol = length(protein_names))
 colnames(coefs) <- protein_names
@@ -234,4 +233,4 @@ plot_circular_graph(im)
 
 ```
 
-From the interaction graph it appears that PIP2 is the protein that interacts with the least number of other proteins, 3, while Jnk is the protein that interacts with the most: 8.
+From the interaction graph it appears that PIP2 is the protein that interacts with the least number of other proteins, 3, while PKA and Jnk are the protein that interact with the most: 8.
