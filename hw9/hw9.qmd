@@ -1,0 +1,160 @@
+---
+title: "Homework 9: Model selection"
+author:
+  - Bernhard Buss
+  - Dario Franzen
+  - Aurimas Greicius
+  - Timothy Lauren Nijhuis
+  - Carlo Rossetto
+  - Yuliyan Slavchev
+  - Görkem Kadir Solun
+format: pdf
+editor: visual
+---
+
+## Problem 22: d-separation
+
+### Part i: All variables d-separated from A given {C,E}
+
+No nodes are d-separated from $A$ given $\{C,E\}$, brief explanations are provided below:
+
+$B$ is not because $A\rightarrow B$ is an open chain.
+
+$C$ does not apply because it is given.
+
+$D$ is not because $A \rightarrow B \rightarrow D$ is an open chain. $F$ is not because $A\rightarrow B \rightarrow F$ is an open chain.
+
+$G$ has two paths that go from $A$ to $B$: $A \rightarrow C \rightarrow G$, which is closed because $C$ is observed. $A \rightarrow B \rightarrow D \rightarrow G$ which is an open chain, so $G$ is also not d-separated.
+
+$E$ does not apply because it is given.
+
+### Part ii: True or false independence statements
+
+#### Part i: 
+$C$ is independent of $D$: False.
+There are two paths going from $C$ to $D$.
+$C \rightarrow G \left arrow D$ where $G$ is a collider is closed because $G$ is not given.
+$C \leftarrow A \rightarrow B \rightarrow D$. Here there is an open fork $C \leftarrow A \rightarrow B$ and an open chain $A \rightarrow B \rightarrow D$, so information flows and $C$ and $D$ are not independent.
+
+#### Part ii:
+$B$ is conditionally independent of $C$ given $\{F,G\}$: False.
+There are three paths going from $B$ to $C$: $B \leftarrow A \rightarrow C$, $B\rightarrow D \rightarrow G \leftarrow C$ and $B \rightarrow F \rightarrow E \leftarrow D \rightarrow G \leftarrow C$
+$B \leftarrow A \rightarrow C$ is an open fork, so information flows. This is sufficient to state they are not conditionally independent.
+$B\rightarrow D \rightarrow G \leftarrow C$ would also be open because $B\rightarrow D \rightarrow G$ is a chain and $D \rightarrow G \leftarrow C$ is open because $G$ is a collider (normally closed) but because it is given it opens.
+$B \rightarrow F \rightarrow E \leftarrow D \rightarrow G \leftarrow C$ would be closed because both $B \rightarrow F \rightarrow E$ is a chain but $F$ is given, so it is closed, and also $F \rightarrow E \leftarrow D$ with E as a collider, which is not given, so is closed.
+
+#### Part iii:
+$G$ is conditionally independent of $E$ given $\{A, D\}$: True.
+There would be four paths that connect $G$ and $E$, all 4 are blocked because firstly $C\leftarrow A\right arrow B$ is a fork with $A$ given, closing the two paths passing through here. Secondly $G \leftarrow D \rightarrow E$ is a fork and $G \leftarrow D \leftarrow B$ where D is given, so they close and no path can reach $E$, making $G$ and $E$ independent given $\{A,D\}$.
+#### Part iv:
+$C$ is conditionally independent of $F$ given $\{G, E\}$: False.
+$C \rightarrow G \leftarrow D$ and $D \rightarrow E \leftarrow F$ are the only two v structures in the graph with $G$ and $E$ as colliders. By observing $G$ and $E$ these colliders are open and the entire Baysian network is open, so $C$ and $F$ are not conditionally independent.
+#### Part v:
+$C$ is conditionally independent of $E$ given the Markov blanket of $C$: True.
+The Markov blanket of a node in a Bayesian network consists of three types of neighbours: parents, children, and parents of its children. So for $C$, $MB(C)$: $\{A,G,D\}$ because $A$ is its parent, $G$ is its children, and $D$ is the parent of its children, $G$.
+Observing $A$ blocks the fork $C\leftarrow A \rightarrow B$, blocking any path through $A$.
+Observing $G$ opens the collider $G$ in $C \rightarrow G \leftarrow D$, however, observing $D$, blocks both the chain $G \leftarrow D \leftarrow B$ and the fork $G \leftarrow D \rightarrow E$. Since all paths between $C$ and $E$ pass through either $A$ or $D$, they are all blocked, meaning the two nodes are conditionally independent.
+
+## Problem 23: Structure learning in R
+
+### Part i: Linearly regress X on Z and store residuals
+
+### Part ii Linearly regress Y on Z and store residuals
+
+### Part iii Test null hypothesis of no correlation
+
+### Part iv: PC algorithm
+
+### Part v: MCMC with BGe Score
+
+```{r}
+suppressPackageStartupMessages(library("glmnet"))
+
+
+# loading the data
+riboflavin <- read.csv("riboflavin.csv")
+```
+
+```{r}
+print(res)
+```
+
+Ridge regression obtains the lowest mean squared error (MSE), 0.247, of the three models. However, as per definition, it does not drive any of the coefficients to zero. Infact, it has 4088 non zero coefficients, while in comparison lasso regression has only 26, which results in a worse MSE of 0.330. Elastic net, which is a combination of the models, is sensibly in between: it results in 48 non zero coefficients, more than lasso, and many fewer than ridge, and an MSE of 0.294, again in between the three.
+
+## Problem 21: Identification of protein-protein interaction networks via the graphical lasso
+
+### Part a: Raw data loading
+
+```{r}
+
+#loading the data
+pe_wX <- read.csv("proteinexpression.csv")
+pe <- subset(pe_wX, select = -X)
+protein_names <- colnames(pe)
+
+```
+
+### Part b: Lasso model fitting
+
+```{r}
+set.seed(42)
+
+# matrix to hold the coefficients: rows = (Intercept) + all proteins, columns = response protein
+coefs <- matrix(0.0, nrow = length(protein_names) + 1, ncol = length(protein_names))
+colnames(coefs) <- protein_names
+rownames(coefs) <- c("(Intercept)", protein_names)
+
+for (protein in protein_names) {
+  prot_idx_bool <- protein == protein_names
+  x_train <- as.matrix(pe[, !prot_idx_bool]) # all other proteins as predictors
+  y_train <- as.numeric(pe[, prot_idx_bool]) # response: the selected protein
+
+  cv_model <- cv.glmnet(x_train, y_train, alpha = 1, nfolds = 5)
+  coef_set <- coef(cv_model, s = "lambda.1se")
+
+  # place each coefficient in the row matching its predictor name;
+  # the diagonal entry (protein as its own predictor) stays 0 by construction
+  dense_coefs <- as.matrix(coef_set)
+  coefs[rownames(dense_coefs), protein] <- dense_coefs[, 1]
+}
+```
+
+```{r}
+coefs
+```
+
+### Part c: Building the interaction matrix
+
+```{r}
+# creating the interaction matrix im
+im <- matrix(0, nrow = length(protein_names), ncol = length(protein_names))
+colnames(im) <- protein_names
+rownames(im) <- protein_names
+
+# filling the interaction matrix (both the upper and lower triangle), the same protein is not assumed to promote itself, so the diagonal = 0
+for (protein in protein_names) {
+  for (protein_2 in protein_names) {
+    if (protein != protein_2) {
+      if ((coefs[protein,protein_2] != 0) & (coefs[protein_2,protein] != 0)) {
+        im[protein,protein_2] <- 1
+        im[protein_2,protein] <- 1
+      }
+    }
+  }
+}
+```
+
+```{r}
+im
+```
+
+### Part d: Network plotting
+
+```{r}
+
+source("plotcirculargraph.R")
+plot_circular_graph(im)
+
+```
+
+From the interaction graph it appears that PIP2 is the protein that interacts with the least number of other proteins, 3, while PKA and Jnk are the protein that interact with the most: 8.
