@@ -22,139 +22,170 @@ $B$ is not because $A\rightarrow B$ is an open chain.
 
 $C$ does not apply because it is given.
 
-$D$ is not because $A \rightarrow B \rightarrow D$ is an open chain. $F$ is not because $A\rightarrow B \rightarrow F$ is an open chain.
+$D$ is not because $A \rightarrow B \rightarrow D$ is an open chain.
 
-$G$ has two paths that go from $A$ to $B$: $A \rightarrow C \rightarrow G$, which is closed because $C$ is observed. $A \rightarrow B \rightarrow D \rightarrow G$ which is an open chain, so $G$ is also not d-separated.
+$F$ is not because $A\rightarrow B \rightarrow F$ is an open chain.
+
+$G$ has two paths that come from $A$: $A \rightarrow C \rightarrow G$, is closed because $C$ is observed, but$A \rightarrow B \rightarrow D \rightarrow G$ is an open chain, so $G$ is also not d-separated.
 
 $E$ does not apply because it is given.
 
 ### Part ii: True or false independence statements
 
-#### Part i: 
+#### Part i:
+
 $C$ is independent of $D$: False.
-There are two paths going from $C$ to $D$.
-$C \rightarrow G \left arrow D$ where $G$ is a collider is closed because $G$ is not given.
-$C \leftarrow A \rightarrow B \rightarrow D$. Here there is an open fork $C \leftarrow A \rightarrow B$ and an open chain $A \rightarrow B \rightarrow D$, so information flows and $C$ and $D$ are not independent.
+
+There are two paths going from $C$ to $D$. $C \rightarrow G \leftarrow D$ where $G$ is a collider is closed because $G$ is not given. $C \leftarrow A \rightarrow B \rightarrow D$. Here there is an open fork $C \leftarrow A \rightarrow B$ and an open chain $A \rightarrow B \rightarrow D$, so information flows and $C$ and $D$ are not independent.
 
 #### Part ii:
+
 $B$ is conditionally independent of $C$ given $\{F,G\}$: False.
-There are three paths going from $B$ to $C$: $B \leftarrow A \rightarrow C$, $B\rightarrow D \rightarrow G \leftarrow C$ and $B \rightarrow F \rightarrow E \leftarrow D \rightarrow G \leftarrow C$
-$B \leftarrow A \rightarrow C$ is an open fork, so information flows. This is sufficient to state they are not conditionally independent.
-$B\rightarrow D \rightarrow G \leftarrow C$ would also be open because $B\rightarrow D \rightarrow G$ is a chain and $D \rightarrow G \leftarrow C$ is open because $G$ is a collider (normally closed) but because it is given it opens.
-$B \rightarrow F \rightarrow E \leftarrow D \rightarrow G \leftarrow C$ would be closed because both $B \rightarrow F \rightarrow E$ is a chain but $F$ is given, so it is closed, and also $F \rightarrow E \leftarrow D$ with E as a collider, which is not given, so is closed.
+
+There are three paths going from $B$ to $C$: $B \leftarrow A \rightarrow C$, $B\rightarrow D \rightarrow G \leftarrow C$ and $B \rightarrow F \rightarrow E \leftarrow D \rightarrow G \leftarrow C$ $B \leftarrow A \rightarrow C$ is an open fork, so information flows. This is sufficient to state they are not conditionally independent. $B\rightarrow D \rightarrow G \leftarrow C$ would also be open because $B\rightarrow D \rightarrow G$ is a chain and $D \rightarrow G \leftarrow C$ is open because $G$ is a collider (normally closed) but because it is given it opens. $B \rightarrow F \rightarrow E \leftarrow D \rightarrow G \leftarrow C$ would be closed because both $B \rightarrow F \rightarrow E$ is a chain but $F$ is given, so it is closed, and also $F \rightarrow E \leftarrow D$ with E as a collider, which is not given, so is closed.
 
 #### Part iii:
+
 $G$ is conditionally independent of $E$ given $\{A, D\}$: True.
-There would be four paths that connect $G$ and $E$, all 4 are blocked because firstly $C\leftarrow A\right arrow B$ is a fork with $A$ given, closing the two paths passing through here. Secondly $G \leftarrow D \rightarrow E$ is a fork and $G \leftarrow D \leftarrow B$ where D is given, so they close and no path can reach $E$, making $G$ and $E$ independent given $\{A,D\}$.
+
+There would be four paths that connect $G$ and $E$, all 4 are blocked because firstly $C\leftarrow A\rightarrow B$ is a fork with $A$ given, closing the two paths passing through here. Secondly $G \leftarrow D \rightarrow E$ is a fork and $G \leftarrow D \leftarrow B$ where D is given, so they close and no path can reach $E$, making $G$ and $E$ independent given $\{A,D\}$.
+
 #### Part iv:
+
 $C$ is conditionally independent of $F$ given $\{G, E\}$: False.
-$C \rightarrow G \leftarrow D$ and $D \rightarrow E \leftarrow F$ are the only two v structures in the graph with $G$ and $E$ as colliders. By observing $G$ and $E$ these colliders are open and the entire Baysian network is open, so $C$ and $F$ are not conditionally independent.
+
+$C \rightarrow G \leftarrow D$ and $D \rightarrow E \leftarrow F$ are the only two v structures in the graph with $G$ and $E$ as colliders. By observing $G$ and $E$ these colliders are open and the entire Baysian network is open, so $C$ and $F$ are not conditionally independent. There is also another, "easier" path, $C \leftarrow A \rightarrow B \rightarrow F$ which is open because fork $C \leftarrow A \rightarrow B$ is open and chain $A \rightarrow B \rightarrow F$ is also open.
+
 #### Part v:
+
 $C$ is conditionally independent of $E$ given the Markov blanket of $C$: True.
-The Markov blanket of a node in a Bayesian network consists of three types of neighbours: parents, children, and parents of its children. So for $C$, $MB(C)$: $\{A,G,D\}$ because $A$ is its parent, $G$ is its children, and $D$ is the parent of its children, $G$.
-Observing $A$ blocks the fork $C\leftarrow A \rightarrow B$, blocking any path through $A$.
-Observing $G$ opens the collider $G$ in $C \rightarrow G \leftarrow D$, however, observing $D$, blocks both the chain $G \leftarrow D \leftarrow B$ and the fork $G \leftarrow D \rightarrow E$. Since all paths between $C$ and $E$ pass through either $A$ or $D$, they are all blocked, meaning the two nodes are conditionally independent.
+
+The Markov blanket of a node in a Bayesian network consists of three types of neighbours: parents, children, and parents of its children. So for $C$, $MB(C)$: $\{A,G,D\}$ because $A$ is its parent, $G$ is its children, and $D$ is the parent of its children, $G$. Observing $A$ blocks the fork $C\leftarrow A \rightarrow B$, blocking any path through $A$. Observing $G$ opens the collider $G$ in $C \rightarrow G \leftarrow D$, however, observing $D$, blocks both the chain $G \leftarrow D \leftarrow B$ and the fork $G \leftarrow D \rightarrow E$. Since all paths between $C$ and $E$ pass through either $A$ or $D$, they are all blocked, meaning the two nodes are conditionally independent.
 
 ## Problem 23: Structure learning in R
 
-### Part i: Linearly regress X on Z and store residuals
-
-### Part ii Linearly regress Y on Z and store residuals
-
-### Part iii Test null hypothesis of no correlation
-
-### Part iv: PC algorithm
-
-### Part v: MCMC with BGe Score
-
 ```{r}
-suppressPackageStartupMessages(library("glmnet"))
-
-
 # loading the data
-riboflavin <- read.csv("riboflavin.csv")
+simulated_DAG <- read.csv("simulated_DAG.csv")
+
 ```
+
+Next, the different claims of problem 22 part i will be evaluated. Since $C$ and $E$ are given, they are not evaluated.
 
 ```{r}
-print(res)
+# A is conditionally independent of B (d-separated) given {C,E}
+A_CE_results <- lm(A ~ C+E, simulated_DAG)
+B_CE_results <- lm(B ~ C+E, simulated_DAG)
+A_B_CE_results <- cor.test(A_CE_results$residuals,B_CE_results$residuals)
+print(A_B_CE_results)
+
+# A is conditionally independent of D (d-separated) given {C,E}
+D_CE_results <- lm(D ~ C+E, simulated_DAG)
+A_D_CE_results <- cor.test(A_CE_results$residuals,D_CE_results$residuals)
+print(A_D_CE_results)
+
+# A is conditionally independent of F (d-separated) given {C,E}
+F_CE_results <- lm(F ~ C+E, simulated_DAG)
+A_F_CE_results <- cor.test(A_CE_results$residuals,F_CE_results$residuals)
+print(A_F_CE_results)
+
+# A is conditionally independent of G (d-separated) given {C,E}
+G_CE_results <- lm(G ~ C+E, simulated_DAG)
+A_G_CE_results <- cor.test(A_CE_results$residuals,G_CE_results$residuals)
+print(A_G_CE_results)
 ```
 
-Ridge regression obtains the lowest mean squared error (MSE), 0.247, of the three models. However, as per definition, it does not drive any of the coefficients to zero. Infact, it has 4088 non zero coefficients, while in comparison lasso regression has only 26, which results in a worse MSE of 0.330. Elastic net, which is a combination of the models, is sensibly in between: it results in 48 non zero coefficients, more than lasso, and many fewer than ridge, and an MSE of 0.294, again in between the three.
+All p-values for the 4 tested variables: $B$, $D$, $F$ and $G$ are lower than 0.05, the null hypothesis of no correlation, or of conditional independence, or of d-separation can be rejected. Hence, as suggested from the graph structure in problem 22, there are no d-separated variables with $A$ given $\{C,E\}$.
 
-## Problem 21: Identification of protein-protein interaction networks via the graphical lasso
-
-### Part a: Raw data loading
+Next, the different claims of problem 22 part ii will be evaluated.
 
 ```{r}
-
-#loading the data
-pe_wX <- read.csv("proteinexpression.csv")
-pe <- subset(pe_wX, select = -X)
-protein_names <- colnames(pe)
-
+# C independent of D
+C_D_results <- cor.test(simulated_DAG$C,simulated_DAG$D)
+print(C_D_results)
 ```
 
-### Part b: Lasso model fitting
+A p-value in the order of 10\^(-11) indicates that the null hypothesis of no correlation can be rejected, and therefore, $C$ is not marginally independent of $D$ as previously suggested based on the graph structure in problem 22.
 
 ```{r}
-set.seed(42)
-
-# matrix to hold the coefficients: rows = (Intercept) + all proteins, columns = response protein
-coefs <- matrix(0.0, nrow = length(protein_names) + 1, ncol = length(protein_names))
-colnames(coefs) <- protein_names
-rownames(coefs) <- c("(Intercept)", protein_names)
-
-for (protein in protein_names) {
-  prot_idx_bool <- protein == protein_names
-  x_train <- as.matrix(pe[, !prot_idx_bool]) # all other proteins as predictors
-  y_train <- as.numeric(pe[, prot_idx_bool]) # response: the selected protein
-
-  cv_model <- cv.glmnet(x_train, y_train, alpha = 1, nfolds = 5)
-  coef_set <- coef(cv_model, s = "lambda.1se")
-
-  # place each coefficient in the row matching its predictor name;
-  # the diagonal entry (protein as its own predictor) stays 0 by construction
-  dense_coefs <- as.matrix(coef_set)
-  coefs[rownames(dense_coefs), protein] <- dense_coefs[, 1]
-}
+# B is conditionally independent of C given {F,G}
+B_FG_results <- lm(B ~ F+G, simulated_DAG)
+C_FG_results <- lm(C ~ F+G, simulated_DAG)
+B_C_FG_results <- cor.test(B_FG_results$residuals,C_FG_results$residuals)
+print(B_C_FG_results)
 ```
+
+A p-value of 0.95 indicates that the there is no correlation, and therefore, $B$ is conditionally independent of $C$ given $\{F,G\}$. This is surprising, based on the graph structure, in problem 22 it was proposed that given the evidence, $B$ and $C$ were not conditionally independent. An explanation for this is that the paths effect cancels out, and when viewing the data the nodes appear to be uncorrelated. There are two active paths between $B$ and $C$ given $\{F,G\}$: $B\leftarrow A \rightarrow C$ and $B\rightarrow D \rightarrow G\leftarrow C$. It could be that the correlation for one path is positive, and for the other negative, cancelling each other out. Infact, while d-separation guarantees independence, d-connection (what the graph would suggest) only implies potential dependence.
 
 ```{r}
-coefs
+# G is conditionally independent of E given {A,D}
+G_AD_results <- lm(G ~ A+D, simulated_DAG)
+E_AD_results <- lm(E ~ A+D, simulated_DAG)
+GE_A_D_results <- cor.test(G_AD_results$residuals,E_AD_results$residuals)
+print(GE_A_D_results)
 ```
 
-### Part c: Building the interaction matrix
+A p-value of 0.89 indicates that there was no significant correlation between the residuals, and therefore, $G$ is conditionally independent of $E$ given $\{A,D\}$ as previously suggested based on the graph structure in problem 22.
 
 ```{r}
-# creating the interaction matrix im
-im <- matrix(0, nrow = length(protein_names), ncol = length(protein_names))
-colnames(im) <- protein_names
-rownames(im) <- protein_names
-
-# filling the interaction matrix (both the upper and lower triangle), the same protein is not assumed to promote itself, so the diagonal = 0
-for (protein in protein_names) {
-  for (protein_2 in protein_names) {
-    if (protein != protein_2) {
-      if ((coefs[protein,protein_2] != 0) & (coefs[protein_2,protein] != 0)) {
-        im[protein,protein_2] <- 1
-        im[protein_2,protein] <- 1
-      }
-    }
-  }
-}
+# C is conditionally independent of F given {G,E}
+C_GE_results <- lm(C ~ G+E, simulated_DAG)
+F_GE_results <- lm(F ~ G+E, simulated_DAG)
+C_F_GE_results <- cor.test(C_GE_results$residuals,F_GE_results$residuals)
+print(C_F_GE_results)
 ```
+
+A p-value in the order of 10\^(-9) indicates that the null hypothesis of no correlation can be rejected, and therefore, $C$ is not conditionally independent of $F$ given $\{G,E\}$ as previously suggested based on the graph structure in problem 22.
 
 ```{r}
-im
+# C is conditionally independent of E given {A,G,D} (the Markov blanket of C)
+C_AGD_results <- lm(C~A+G+D, simulated_DAG)
+E_AGD_results <- lm(E~A+G+D, simulated_DAG)
+C_E_AGD_results <- cor.test(C_AGD_results$residuals,E_AGD_results$residuals)
+print(C_E_AGD_results)
 ```
 
-### Part d: Network plotting
+A p-value of 0.62 indicates that there was no significant correlation, and therefore, $C$ is conditionally independent of $E$ given $\{A,G,D\}$ as previously suggested based on the graph structure in problem 22.
+
+### Part ii: PC algorithm
 
 ```{r}
+suppressPackageStartupMessages(library(pcalg))
+cor_mat <- cor(simulated_DAG)
+n <- nrow(simulated_DAG)
+suffStat <- list(C = cor_mat, n = n)
 
-source("plotcirculargraph.R")
-plot_circular_graph(im)
+pc.fit <- pc(suffStat = suffStat, alpha = 0.05, indepTest = gaussCItest, labels = colnames(simulated_DAG))
+
+
+plot(pc.fit, main = "Estimated CPDAG")
 
 ```
 
-From the interaction graph it appears that PIP2 is the protein that interacts with the least number of other proteins, 3, while PKA and Jnk are the protein that interact with the most: 8.
+### Part iii: MCMC with BGe Score
+
+```{r}
+suppressPackageStartupMessages(library(BiDAG))
+Score <- scoreparameters("bge",simulated_DAG)
+maxBM <- learnBN(Score, algorithm = "orderIter")
+print(maxBM$CPDAG)
+```
+
+Or better plotting the graph with edges:
+
+```{r}
+suppressPackageStartupMessages(library(igraph))
+cpdag_graph <- graph_from_adjacency_matrix(maxBM$CPDAG)
+
+# 2. Plot the graph!
+plot(cpdag_graph, 
+     main = "Completed partially DAG (CPDAG) from orderIter MCMC",
+     vertex.color = "lightblue",  
+     vertex.size = 30,            
+     vertex.label.color = "black",
+     edge.arrow.size = 0.8)       
+```
+
+### Part iv: Comparison of predicted DAG versus PC algorithm and MCMC with BGe score estimates
+
+Both the PC algorithm and the MCMC with BGe score estimates suggest identical graphs to that of problem 22!
