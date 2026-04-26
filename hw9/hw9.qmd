@@ -26,7 +26,7 @@ $D$ is not because $A \rightarrow B \rightarrow D$ is an open chain.
 
 $F$ is not because $A\rightarrow B \rightarrow F$ is an open chain.
 
-$G$ has two paths that come from $A$: $A \rightarrow C \rightarrow G$, is closed because $C$ is observed, but$A \rightarrow B \rightarrow D \rightarrow G$ is an open chain, so $G$ is also not d-separated.
+$G$ has two paths that come from $A$: $A \rightarrow C \rightarrow G$, is closed because $C$ is observed, but $A \rightarrow B \rightarrow D \rightarrow G$ is an open chain, so $G$ is also not d-separated.
 
 $E$ does not apply because it is given.
 
@@ -42,7 +42,7 @@ There are two paths going from $C$ to $D$. $C \rightarrow G \leftarrow D$ where 
 
 $B$ is conditionally independent of $C$ given $\{F,G\}$: False.
 
-There are three paths going from $B$ to $C$: $B \leftarrow A \rightarrow C$, $B\rightarrow D \rightarrow G \leftarrow C$ and $B \rightarrow F \rightarrow E \leftarrow D \rightarrow G \leftarrow C$ $B \leftarrow A \rightarrow C$ is an open fork, so information flows. This is sufficient to state they are not conditionally independent. $B\rightarrow D \rightarrow G \leftarrow C$ would also be open because $B\rightarrow D \rightarrow G$ is a chain and $D \rightarrow G \leftarrow C$ is open because $G$ is a collider (normally closed) but because it is given it opens. $B \rightarrow F \rightarrow E \leftarrow D \rightarrow G \leftarrow C$ would be closed because both $B \rightarrow F \rightarrow E$ is a chain but $F$ is given, so it is closed, and also $F \rightarrow E \leftarrow D$ with E as a collider, which is not given, so is closed.
+There are three paths going from $B$ to $C$: $B \leftarrow A \rightarrow C$, $B\rightarrow D \rightarrow G \leftarrow C$ and $B \rightarrow F \rightarrow E \leftarrow D \rightarrow G \leftarrow C$. $B \leftarrow A \rightarrow C$ is an open fork, so information flows. This is sufficient to state they are not conditionally independent. $B\rightarrow D \rightarrow G \leftarrow C$ would also be open because $B\rightarrow D \rightarrow G$ is a chain and $D \rightarrow G \leftarrow C$ is open because $G$ is a collider (normally closed) but because it is given it opens. $B \rightarrow F \rightarrow E \leftarrow D \rightarrow G \leftarrow C$ would be closed because both $B \rightarrow F \rightarrow E$ is a chain but $F$ is given, so it is closed, and also $F \rightarrow E \leftarrow D$ with E as a collider, which is not given, so is closed.
 
 #### Part iii:
 
