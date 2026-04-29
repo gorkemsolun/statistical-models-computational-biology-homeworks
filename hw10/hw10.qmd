@@ -49,3 +49,104 @@ gives $\tilde W = \begin{pmatrix}2 & 1\\ 2 & 2\end{pmatrix}$ and $\tilde H = \be
 **Permutation ambiguity** Likewise, for any $K\times K$ permutation matrix $P$ which satisfies $P^{-1}=P^T\ge 0$, the pair $\tilde W = WP$, $\tilde H = P^T H$ reorders the components without changing the product. Combining the two yields the full monomial ambiguity $\tilde W = WPD$, $\tilde H = D^{-1}P^T H$.
 
 Hence NMF factors are unique only up to a permutation and rescaling of the components. Beyond these trivial ambiguities, additional non-uniqueness can occur for specific data, but the simple counter-examples above already suffice to disprove uniqueness in general.
+
+## Problem 25: NMF of spatial gene expression patterns
+
+```{r}
+suppressPackageStartupMessages(library(NMF))
+load("DrosophilaExpressions.rda")
+set.seed(42)
+```
+
+### Original observations: first 16 genes
+
+```{r}
+imageBatchDisplay(V[, 1:16])
+```
+
+### Rank 15 factorization
+
+```{r}
+res15 <- nmf(V, rank = 15, seed = 123, method = "brunet")
+W15  <- basis(res15)
+H15  <- coef(res15)
+Vhat15 <- W15 %*% H15
+cat("Generalized KL divergence (rank 15):", residuals(res15), "\n")
+```
+
+Approximated patterns of the first 16 genes ($\hat V[,1:16]$):
+
+```{r}
+imageBatchDisplay(Vhat15[, 1:16])
+```
+
+The 15 basis patterns (columns of $W$):
+
+```{r}
+imageBatchDisplay(W15)
+```
+
+### Rank 10 factorization
+
+```{r}
+res10 <- nmf(V, rank = 10, seed = 123, method = "brunet")
+W10  <- basis(res10)
+H10  <- coef(res10)
+Vhat10 <- W10 %*% H10
+cat("Generalized KL divergence (rank 10):", residuals(res10), "\n")
+```
+
+Approximated patterns of the first 16 genes ($\hat V[,1:16]$):
+
+```{r}
+imageBatchDisplay(Vhat10[, 1:16])
+```
+
+The 10 basis patterns (columns of $W$):
+
+```{r}
+imageBatchDisplay(W10)
+```
+
+The KL divergence is lower for rank 15 ($\approx 3626$) than for rank 10 ($\approx 4901$), which is expected. A higher rank gives a richer basis and therefore a closer approximation. The rank-10 basis patterns are visibly broader / less specialized than the rank-15 ones.
+
+### Part 2: Mkp3 and CG31909 as linear combinations of basis patterns
+
+For a gene $j$, the approximated expression pattern is
+$$\hat V_{\cdot j} = \sum_{k=1}^{K} H_{kj}\,W_{\cdot k},$$
+i.e. a non-negative linear combination of the basis patterns $W_{\cdot k}$ with weights $H_{kj}$.
+
+#### Mkp3
+
+```{r}
+mkp3_idx <- which(colnames(V) == "Mkp3")
+
+# True expression pattern of Mkp3
+imageBatchDisplay(V[, mkp3_idx, drop = FALSE], imgNames = "Mkp3 (observed)")
+
+# Reconstructed pattern of Mkp3
+imageBatchDisplay(Vhat10[, mkp3_idx, drop = FALSE],
+                  imgNames = "Mkp3 (reconstructed)")
+
+# Basis patterns labelled with the coefficients H[, Mkp3]
+imageBatchDisplay(W10, imgNames = round(H10[, mkp3_idx], 3))
+```
+
+#### CG31909
+
+```{r}
+cg_idx <- which(colnames(V) == "CG31909")
+
+imageBatchDisplay(V[, cg_idx, drop = FALSE], imgNames = "CG31909 (observed)")
+imageBatchDisplay(Vhat10[, cg_idx, drop = FALSE],
+                  imgNames = "CG31909 (reconstructed)")
+imageBatchDisplay(W10, imgNames = round(H10[, cg_idx], 3))
+```
+
+#### Interpretation
+
+The 10 columns of $W$ form a parts-based dictionary of canonical spatial expression motifs of the early Drosophila embryo: anterior caps, posterior caps, lateral stripes, dorsal and ventral domains, terminal regions, etc. They are not raw observations, but recurring spatial templates that the algorithm extracts because most gene patterns can be reconstructed as a sum of just a few of them.
+
+The coefficients $H_{kj}$ are the loadings of gene $j$ on each motif: $H_{kj}$ tells us how strongly motif $k$ contributes to gene $j$'s spatial expression, with $H_{kj}=0$ meaning that motif is irrelevant for that gene. Because both $W$ and $H$ are non-negative, the contributions only add up and components cannot cancel each other out, which is what makes the decomposition naturally interpretable in terms of which spatial regions does this gene express in.
+
+For Mkp3 and CG31909, only a small number of basis patterns receive a substantially non-zero coefficient, which means each gene is approximated as a sparse mixture of a few canonical regions. The reconstructed images closely resemble the observed patterns, confirming that these few basis components capture the dominant spatial structure of the gene.
