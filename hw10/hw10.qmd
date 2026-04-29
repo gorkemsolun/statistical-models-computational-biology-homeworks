@@ -1,0 +1,19 @@
+---
+title: "Homework 10: NMF"
+author:
+  - Bernhard Buss
+  - Dario Franzen
+  - Aurimas Greicius
+  - Timothy Lauren Nijhuis
+  - Carlo Rossetto
+  - Yuliyan Slavchev
+  - Görkem Kadir Solun
+format: pdf
+editor: visual
+---
+
+## Problem 24: Uniqueness of NMF solutions
+
+## Problem 25: NMF of spatial gene expression patterns
+
+## Problem 26: Implementing NMF from scratch
