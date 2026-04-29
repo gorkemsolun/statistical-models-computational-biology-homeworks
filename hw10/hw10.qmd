@@ -1,5 +1,5 @@
 ---
-title: "Homework 10: NMF"
+title: "Homework 10: Nonnegative Matrix Factorization"
 author:
   - Bernhard Buss
   - Dario Franzen
@@ -12,8 +12,40 @@ format: pdf
 editor: visual
 ---
 
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE,
+                      fig.width = 7, fig.height = 7, fig.align = "center")
+```
+
 ## Problem 24: Uniqueness of NMF solutions
 
-## Problem 25: NMF of spatial gene expression patterns
+The factor matrices $W$ and $H$ in a non-negative matrix factorization $V \approx WH$ are **not unique**. For any invertible $K\times K$ matrix $Q$ such that both $Q$ and $Q^{-1}$ have non-negative entries, the matrices
 
-## Problem 26: Implementing NMF from scratch
+$$
+\tilde W = WQ \in \mathbb{R}_{\ge 0}^{M\times K}, \qquad \tilde H = Q^{-1}H \in \mathbb{R}_{\ge 0}^{K\times N}
+$$
+
+satisfy $\tilde W\tilde H = WQQ^{-1}H = WH$ but in general $\tilde W\neq W$ and $\tilde H\neq H$. Such matrices $Q$ are the monomial matrices, i.e. products of a permutation matrix and a positive diagonal matrix.
+
+**Concrete counter-example, diagonal scaling** Let $D = \mathrm{diag}(d_1,\dots,d_K)$ with $d_k>0$ and not all $d_k=1$. Then
+
+$$
+\tilde W := WD,\qquad \tilde H := D^{-1}H
+$$
+
+are non-negative because $W,H$ are non-negative and $D,D^{-1}$ are positive diagonal, differ from $W$ and $H$, and
+
+$$
+\tilde W\tilde H = (WD)(D^{-1}H) = W(DD^{-1})H = WH.
+$$
+
+For example with $K=2$, taking
+$$
+W=\begin{pmatrix}1 & 1\\ 1 & 2\end{pmatrix},\quad H=\begin{pmatrix}1 & 2\\ 1 & 1\end{pmatrix},\quad D=\begin{pmatrix}2 & 0\\ 0 & 1\end{pmatrix},
+$$
+
+gives $\tilde W = \begin{pmatrix}2 & 1\\ 2 & 2\end{pmatrix}$ and $\tilde H = \begin{pmatrix}1/2 & 1\\ 1 & 1\end{pmatrix}$, which are still non-negative and yield the same product $WH = \tilde W\tilde H = \begin{pmatrix}2 & 3\\ 3 & 4\end{pmatrix}$.
+
+**Permutation ambiguity** Likewise, for any $K\times K$ permutation matrix $P$ which satisfies $P^{-1}=P^T\ge 0$, the pair $\tilde W = WP$, $\tilde H = P^T H$ reorders the components without changing the product. Combining the two yields the full monomial ambiguity $\tilde W = WPD$, $\tilde H = D^{-1}P^T H$.
+
+Hence NMF factors are unique only up to a permutation and rescaling of the components. Beyond these trivial ambiguities, additional non-uniqueness can occur for specific data, but the simple counter-examples above already suffice to disprove uniqueness in general.
