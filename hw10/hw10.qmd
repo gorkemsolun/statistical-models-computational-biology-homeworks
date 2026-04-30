@@ -150,3 +150,51 @@ The 10 columns of $W$ form a parts-based dictionary of canonical spatial express
 The coefficients $H_{kj}$ are the loadings of gene $j$ on each motif: $H_{kj}$ tells us how strongly motif $k$ contributes to gene $j$'s spatial expression, with $H_{kj}=0$ meaning that motif is irrelevant for that gene. Because both $W$ and $H$ are non-negative, the contributions only add up and components cannot cancel each other out, which is what makes the decomposition naturally interpretable in terms of which spatial regions does this gene express in.
 
 For Mkp3 and CG31909, only a small number of basis patterns receive a substantially non-zero coefficient, which means each gene is approximated as a sparse mixture of a few canonical regions. The reconstructed images closely resemble the observed patterns, confirming that these few basis components capture the dominant spatial structure of the gene.
+
+## Problem 26: Implementing NMF from scratch
+
+```{r}
+load("DrosophilaExpressions.rda")
+
+# Generalized KL divergence with log 0 = 0
+gkl <- function(V, V_hat) {
+  V_pos <- V > 0
+  sum(V[V_pos] * log(V[V_pos] / V_hat[V_pos])) - sum(V) + sum(V_hat)
+}
+
+nmf_kl <- function(V, K, n_iter = 1000, seed = 123) {
+  set.seed(seed)
+  M <- nrow(V); N <- ncol(V)
+  W <- matrix(runif(M * K), M, K)
+  H <- matrix(runif(K * N), K, N)
+  eps <- .Machine$double.eps
+
+  for (it in seq_len(n_iter)) {
+    # H update: H is K x N
+    # Dividing recycles along rows of H (each row k divided by colSums(W)[k]).
+    WH <- W %*% H + eps
+    H  <- H * (crossprod(W, V / WH) / colSums(W))
+
+    # W update: W is M x K
+    # We need to divide column k of W by rowSums(H)[k], which is column-wise scaling.
+    WH    <- W %*% H + eps
+    num_W <- tcrossprod(V / WH, H)            # M x K
+    W     <- W * sweep(num_W, 2, rowSums(H), "/")
+  }
+  list(W = W, H = H)
+}
+
+fit <- nmf_kl(V, K = 10, n_iter = 1000, seed = 123)
+W_self <- fit$W
+H_self <- fit$H
+cat("Generalized KL divergence after 1000 iters:",
+    gkl(V, W_self %*% H_self), "\n")
+```
+
+Inferred basis patterns:
+
+```{r}
+imageBatchDisplay(W_self)
+```
+
+The KL divergence reached by our hand-written algorithm (4960) is close to the value reported by the `NMF` package for the same rank (4901). The visualized basis patterns also closely resemble the ones obtained from the `NMF` package. They capture the same canonical spatial regions of the embryo (anterior, posterior, etc.), differing only by the order of the components and small differences in detail. This is consistent with the non-uniqueness of NMF discussed in Problem 24. The two algorithms can reach different but essentially equivalent factorizations differing by a permutation and rescaling of the components, plus minor numerical differences from random initialisation.
