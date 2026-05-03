@@ -1,0 +1,150 @@
+---
+title: "Homework 10: Non-negative Matrix Factorization"
+author:
+  - Bernhard Buss
+  - Dario Franzen
+  - Aurimas Greicius
+  - Timothy Lauren Nijhuis
+  - Carlo Rossetto
+  - Yuliyan Slavchev
+  - Görkem Kadir Solun
+format: pdf
+editor: visual
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE,
+                      fig.width = 7, fig.height = 7, fig.align = "center")
+```
+
+## Problem 24: Uniqueness of NMF solutions
+
+## Problem 25: NMF of spatial gene expression patterns
+
+```{r}
+suppressPackageStartupMessages(library(NMF))
+dros_exp <- load("DrosophilaExpressions.rda")
+set.seed(42)
+```
+
+### Part 1
+
+
+```{r}
+imageBatchDisplay(V[,1:16])
+```
+#### Rank 15 factorisation
+
+```{r}
+V15_approx <- nmf(V, rank = 15, seed = 123, method = "brunet")
+```
+
+```{r}
+V15_approx@residuals
+```
+```{r}
+basis15 <- basis(V15_approx) # or V15_approx@fit@W
+coefs15 <- coef(V15_approx) # or V15_approx@fit@H
+V15_calc <- fitted(V15_approx) # or basis15 %*% coefs15
+imageBatchDisplay(V15_calc[,1:16])
+```
+
+```{r}
+imageBatchDisplay(basis15)
+```
+
+#### Rank 10 factorisation
+
+```{r}
+V10_approx <- nmf(V, rank = 10, seed = 123, method = "brunet")
+```
+
+```{r}
+V10_approx@residuals
+```
+
+```{r}
+basis10 <- basis(V10_approx) # or V10_approx@fit@W
+coefs10 <- coef(V10_approx) # or V10_approx@fit@H
+V10_calc <- basis10 %*% coefs10
+imageBatchDisplay(V10_calc[,1:16])
+```
+
+```{r}
+imageBatchDisplay(basis10)
+```
+
+### Part 2
+
+```{r}
+Mkp3_coeffs <- round(coefs10[,"Mkp3"],3)
+
+# Mkp3_coeffs <- coef(V10_approx)
+
+imageBatchDisplay(basis10,imgNames = Mkp3_coeffs)
+```
+
+```{r}
+CG31909_coeffs <- round(coefs10[,"CG31909"],3)
+
+
+imageBatchDisplay(basis10,imgNames = CG31909_coeffs)
+```
+The coefficients indicate to which extent the certain gene has expression in that spatial area. The basis indicate the spatial area.
+
+## Problem 26: Implementing NMF from scratch
+
+```{r}
+gkl <- function(V, V_hat){
+  pos <- V > 0
+  sum(V[pos] * log(V[pos]/V_hat[pos])) - sum(V) + sum(V_hat)
+}
+
+nmfi <- function(V, K, seed, max_iter){
+  set.seed(123)
+  M <- nrow(V)
+  N <- ncol(V)
+  K <- K # rank 10
+  
+  W <- matrix(runif(M*K), nrow = M, ncol = K)
+  H <- matrix(runif(K*N), nrow = K, ncol = N)
+  eps <- .Machine$double.eps
+  
+  for (iter in 1:max_iter){
+    V_approx <- W %*% H + eps
+    
+    denom_H <- colSums(W)
+    nom_H <- t(W)%*%(V/V_approx)
+    
+    fraction_H <- nom_H / denom_H
+    H <- H * fraction_H
+
+    V_approx <- W %*% H + eps
+    
+    denom_W <- rowSums(H)
+    nom_W <- (V/V_approx)%*%t(H)
+    
+    fraction_W <- t(t(nom_W) / denom_W)
+    
+    W <- W * fraction_W
+  }
+  list(H = H, W = W)
+}
+
+
+
+attempt <- nmfi(V, K = 10, seed = 123, max_iter = 1000)
+self_H <- attempt$H
+self_W <- attempt$W
+cat("Generalised Kullback-Leibner divergence is equal to:",
+    gkl(V,self_W%*%self_H),"\n")
+```
+
+
+
+```{r}
+p26_basis10 <- self_W
+
+
+imageBatchDisplay(p26_basis10)
+```

@@ -39,8 +39,7 @@ $$
 \tilde W\tilde H = (WD)(D^{-1}H) = W(DD^{-1})H = WH.
 $$
 
-For example with $K=2$, taking
-$$
+For example with $K=2$, taking $$
 W=\begin{pmatrix}1 & 1\\ 1 & 2\end{pmatrix},\quad H=\begin{pmatrix}1 & 2\\ 1 & 1\end{pmatrix},\quad D=\begin{pmatrix}2 & 0\\ 0 & 1\end{pmatrix},
 $$
 
@@ -68,9 +67,9 @@ imageBatchDisplay(V[, 1:16])
 
 ```{r}
 res15 <- nmf(V, rank = 15, seed = 123, method = "brunet")
-W15  <- basis(res15)
-H15  <- coef(res15)
-Vhat15 <- W15 %*% H15
+W15  <- basis(res15) # could also use res15@fit@W
+H15  <- coef(res15) # could also use res15@fit@H
+Vhat15 <- W15 %*% H15 #  could also use fitted(res15)
 cat("Generalized KL divergence (rank 15):", residuals(res15), "\n")
 ```
 
@@ -112,9 +111,7 @@ The KL divergence is lower for rank 15 ($\approx 3626$) than for rank 10 ($\appr
 
 ### Part 2: Mkp3 and CG31909 as linear combinations of basis patterns
 
-For a gene $j$, the approximated expression pattern is
-$$\hat V_{\cdot j} = \sum_{k=1}^{K} H_{kj}\,W_{\cdot k},$$
-i.e. a non-negative linear combination of the basis patterns $W_{\cdot k}$ with weights $H_{kj}$.
+For a gene $j$, the approximated expression pattern is $$\hat V_{\cdot j} = \sum_{k=1}^{K} H_{kj}\,W_{\cdot k},$$ i.e. a non-negative linear combination of the basis patterns $W_{\cdot k}$ with weights $H_{kj}$.
 
 #### Mkp3
 
@@ -158,7 +155,8 @@ load("DrosophilaExpressions.rda")
 
 # Generalized KL divergence with log 0 = 0
 gkl <- function(V, V_hat) {
-  V_pos <- V > 0
+  V_pos <- V > 0 # V_pos are the indices of non zero numbers
+  # which are the only ones considered in the next line, so that 0*log(0) = 0
   sum(V[V_pos] * log(V[V_pos] / V_hat[V_pos])) - sum(V) + sum(V_hat)
 }
 
@@ -167,21 +165,22 @@ nmf_kl <- function(V, K, n_iter = 1000, seed = 123) {
   M <- nrow(V); N <- ncol(V)
   W <- matrix(runif(M * K), M, K)
   H <- matrix(runif(K * N), K, N)
-  eps <- .Machine$double.eps
+  eps <- .Machine$double.eps # to avoid that division by 0 gives error, a very small number is added when calculating WH
 
   for (it in seq_len(n_iter)) {
     # H update: H is K x N
     # Dividing recycles along rows of H (each row k divided by colSums(W)[k]).
     WH <- W %*% H + eps
-    H  <- H * (crossprod(W, V / WH) / colSums(W))
+    num_H <- t(W)%*%(V/WH)
+    H  <- H * (num_H / colSums(W))
 
     # W update: W is M x K
     # We need to divide column k of W by rowSums(H)[k], which is column-wise scaling.
     WH    <- W %*% H + eps
-    num_W <- tcrossprod(V / WH, H)            # M x K
-    W     <- W * sweep(num_W, 2, rowSums(H), "/")
+    num_W  <- (V/WH)%*%t(H)           
+    W     <- W * t(t(num_W) / rowSums(H))
   }
-  list(W = W, H = H)
+  list(W = W, H = H) # function will output the basis W and coefs H
 }
 
 fit <- nmf_kl(V, K = 10, n_iter = 1000, seed = 123)
