@@ -150,6 +150,41 @@ For Mkp3 and CG31909, only a small number of basis patterns receive a substantia
 
 ## Problem 26: Implementing NMF from scratch
 
+The key challenge of this problem is to code the update rules correctly. The authors try to explain this below.
+
+Let's consider the multiplicative update formula for $H$:
+
+$$
+H_{kj} \leftarrow H_{kj} \frac{\sum_i W_{ik}V_{ij} /(WH)_{ij}}{\sum_iW_{ik}}
+$$
+
+Notice that the numerator in the fraction can be rewritten as:
+
+$$
+U_{kj}, U:=(W^T(V/(WH))
+$$
+
+where the `/` denotes elementwise division of two matrices.
+
+The denominator in the fraction in the formula requires that every row $k$ of $U$ needs to be divided by the sum of the entries in column $k$ of $W$. These are the observations that lead to the implementation of the update step for $H$ in the code below.
+
+Let's shift now our attention to the multiplicative update for $W$:
+
+$$
+W_{ik} \leftarrow W_{ik} \frac{\sum_j H_{kj}V_{ij} / (WH)_{ij}}{\sum_j H_{kj}}
+$$
+
+Notice that the numerator in the fraction can be here rewritten as:
+
+$$
+Q_{ik}, Q := ((V/(WH)) H^T)
+$$
+
+The denominator in the fraction of this formula requires that every column $k$ of $Q$ needs to be divided by the sum of the entries in row $k$ of $H$. These operations are also implemented in the code below.
+
+Now, we apply the 1000 iterations where we perform a vectorized version of the multiplicative update at each step.
+
+
 ```{r}
 load("DrosophilaExpressions.rda")
 
