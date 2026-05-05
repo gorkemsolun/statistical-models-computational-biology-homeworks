@@ -109,6 +109,23 @@ imageBatchDisplay(W10)
 
 The KL divergence is lower for rank 15 ($\approx 3626$) than for rank 10 ($\approx 4901$), which is expected. A higher rank gives a richer basis and therefore a closer approximation. The rank-10 basis patterns are visibly broader / less specialized than the rank-15 ones.
 
+They are shown next to each other below for comparison:
+
+```{r}
+#| fig-height: 5
+#| fig-width: 10
+
+# Comparing the basis of V tilde for rank 10 and 15
+par(mfrow = c(1,2), oma = c(0, 0, 2, 0))
+
+imageBatchDisplay(W10)
+mtext("Basis of rank 10 factorisation", side = 3, line = 4.5, font = 2, cex = 1.2, xpd = NA)
+
+imageBatchDisplay(W15)
+mtext("Basis of rank 15 factorisation", side = 3, line = 4.5, font = 2, cex = 1.2, xpd = NA)
+
+```
+
 ### Part 2: Mkp3 and CG31909 as linear combinations of basis patterns
 
 For a gene $j$, the approximated expression pattern is $$\hat V_{\cdot j} = \sum_{k=1}^{K} H_{kj}\,W_{\cdot k},$$ i.e. a non-negative linear combination of the basis patterns $W_{\cdot k}$ with weights $H_{kj}$.
@@ -232,3 +249,22 @@ imageBatchDisplay(W_self)
 ```
 
 The KL divergence reached by our hand-written algorithm (4960) is close to the value reported by the `NMF` package for the same rank (4901). The visualized basis patterns also closely resemble the ones obtained from the `NMF` package. They capture the same canonical spatial regions of the embryo (anterior, posterior, etc.), differing only by the order of the components and small differences in detail. This is consistent with the non-uniqueness of NMF discussed in Problem 24. The two algorithms can reach different but essentially equivalent factorizations differing by a permutation and rescaling of the components, plus minor numerical differences from random initialisation.
+
+The two basis are shown below next to each other for comparison. As described in the paragraph above, the results are very similar:
+
+```{r}
+#| fig-height: 5
+#| fig-width: 10
+
+# Comparing the basis pattern
+par(mfrow = c(1,2), oma = c(0, 0, 2, 0))
+
+imageBatchDisplay(W10)
+mtext("Basis using the NMF package", side = 3, line = 4.5, 
+      font = 2, cex = 1.2, xpd = NA)
+
+imageBatchDisplay(W_self)
+mtext("Basis from manual calculation", side = 3, line = 4.5, 
+      font = 2, cex = 1.2, xpd = NA)
+
+```
