@@ -1,5 +1,5 @@
 ---
-title: "Homework 11: "
+title: "Homework 11: Longitudinal Data"
 author:
   - Bernhard Buss
   - Dario Franzen
@@ -11,3 +11,403 @@ author:
 format: pdf
 editor: visual
 ---
+
+## Problem 27: AR(1) model (2 points)
+
+### Deriving the log-likelihood
+
+We are given a first-order autoregressive process AR(1) with the conditional distribution:
+
+$$
+P(X^t = x^t \mid X^{t-1} = x^{t-1}) = \mathcal{N}(x^t \mid A x^{t-1}, \Gamma),
+$$
+
+where $X^t \in \mathbb{R}^n$, $A \in \mathbb{R}^{n \times n}$, and $\Gamma = I_n$ (the $n \times n$ identity matrix).
+
+The density of a multivariate normal $\mathcal{N}(x \mid \mu, \Sigma)$ is:
+
+$$
+p(x \mid \mu, \Sigma) = (2\pi)^{-n/2} |\Sigma|^{-1/2} \exp\!\left(-\frac{1}{2}(x - \mu)^\top \Sigma^{-1} (x - \mu)\right).
+$$
+
+Since $\Gamma = I_n$, we have $|\Gamma| = 1$ and $\Gamma^{-1} = I_n$. Hence each conditional density simplifies to:
+
+$$
+p(x^t \mid x^{t-1}, A) = (2\pi)^{-n/2} \exp\!\left(-\frac{1}{2}(x^t - Ax^{t-1})^\top (x^t - Ax^{t-1})\right).
+$$
+
+By the Markov property of the AR(1) process, the joint likelihood of the observations $x^1, \ldots, x^T$ (conditioned on $x^0$) factorizes as:
+
+$$
+L(A) = \prod_{t=1}^{T} p(x^t \mid x^{t-1}, A).
+$$
+
+Taking the logarithm:
+
+$$
+\ell(A) = \log L(A) = \sum_{t=1}^{T} \log p(x^t \mid x^{t-1}, A).
+$$
+
+Substituting the Gaussian density:
+
+$$
+\ell(A) = \sum_{t=1}^{T} \left[ -\frac{n}{2}\log(2\pi) - \frac{1}{2}(x^t - Ax^{t-1})^\top (x^t - Ax^{t-1}) \right].
+$$
+
+Dropping the constant term $-\frac{nT}{2}\log(2\pi)$ (which does not depend on $A$), the log-likelihood as a function of $A$ is:
+
+$$
+\boxed{\ell(A) = -\frac{1}{2} \sum_{t=1}^{T} (x^t - Ax^{t-1})^\top (x^t - Ax^{t-1}).}
+$$
+
+### Deriving the score equation and $\hat{A}_{\text{MLE}}$
+
+We need to differentiate $\ell(A)$ with respect to $A$. Using the trace identity from the hint, for a vector $u \in \mathbb{R}^n$:
+
+$$
+u^\top u = \text{tr}(u^\top u) = \text{tr}(u\, u^\top).
+$$
+
+Let $u^t = x^t - Ax^{t-1}$. Then:
+
+$$
+\ell(A) = -\frac{1}{2} \sum_{t=1}^{T} \text{tr}\!\left((x^t - Ax^{t-1})(x^t - Ax^{t-1})^\top\right).
+$$
+
+Expanding the product inside the trace:
+
+$$
+(x^t - Ax^{t-1})(x^t - Ax^{t-1})^\top = x^t {x^t}^\top - A x^{t-1}{x^t}^\top - x^t {x^{t-1}}^\top A^\top + A x^{t-1}{x^{t-1}}^\top A^\top.
+$$
+
+To compute the matrix derivative $\frac{\partial \ell}{\partial A}$, we use the standard matrix calculus identities:
+
+-   $\frac{\partial}{\partial A} \text{tr}(A B) = B^\top$
+-   $\frac{\partial}{\partial A} \text{tr}(A B A^\top) = A(B + B^\top)$
+
+Therefore:
+
+$$
+\frac{\partial \ell}{\partial A} = -\frac{1}{2} \sum_{t=1}^{T} \left[ -x^t {x^{t-1}}^\top - x^t {x^{t-1}}^\top + A\left(x^{t-1}{x^{t-1}}^\top + x^{t-1}{x^{t-1}}^\top\right) \right]
+$$
+
+$$
+= -\frac{1}{2} \sum_{t=1}^{T} \left[ -2\, x^t {x^{t-1}}^\top + 2\, A\, x^{t-1}{x^{t-1}}^\top \right]
+$$
+
+$$
+= \sum_{t=1}^{T} \left[ x^t {x^{t-1}}^\top - A\, x^{t-1}{x^{t-1}}^\top \right].
+$$
+
+**Score equation.** Setting the score $\frac{\partial \ell}{\partial A} = 0$:
+
+$$
+\sum_{t=1}^{T} x^t {x^{t-1}}^\top = A \sum_{t=1}^{T} x^{t-1} {x^{t-1}}^\top.
+$$
+
+**MLE.** Solving for $A$:
+
+$$
+\boxed{\hat{A}_{\text{MLE}} = \left(\sum_{t=1}^{T} x^t {x^{t-1}}^\top \right) \left(\sum_{t=1}^{T} x^{t-1} {x^{t-1}}^\top \right)^{-1}.}
+$$
+
+This is the matrix analogue of the ordinary least squares estimator: we regress the "response" $x^t$ on the "predictor" $x^{t-1}$, and the MLE is $\hat{A} = S_{xy} S_{xx}^{-1}$, where $S_{xy} = \sum_t x^t {x^{t-1}}^\top$ is the cross-covariance matrix and $S_{xx} = \sum_t x^{t-1}{x^{t-1}}^\top$ is the auto-covariance matrix of the lagged observations.
+
+\newpage
+
+## Problem 28: Modeling overdispersion in RNA-seq gene expression (8 points)
+
+### Part 1 (1 point)
+
+We are given the hierarchical model:
+
+$$
+Y_i \mid Z_i = z \sim \text{Pois}(z), \qquad Z_i \sim \text{Gamma}(\alpha_i, \nu_i),
+$$
+
+with $\mathbb{E}(Z_i) = \mu_i = \alpha_i \nu_i$ and $\text{Var}(Z_i) = \alpha_i^2 \nu_i$.
+
+#### Marginal mean
+
+By the **Law of Total Expectation**:
+
+$$
+\mathbb{E}(Y_i) = \mathbb{E}\!\big[\mathbb{E}(Y_i \mid Z_i)\big].
+$$
+
+Since $Y_i \mid Z_i \sim \text{Pois}(Z_i)$, we have $\mathbb{E}(Y_i \mid Z_i) = Z_i$. Therefore:
+
+$$
+\boxed{\mathbb{E}(Y_i) = \mathbb{E}(Z_i) = \mu_i = \alpha_i \nu_i.}
+$$
+
+#### Marginal variance
+
+By the **Law of Total Variance**:
+
+$$
+\text{Var}(Y_i) = \mathbb{E}\!\big[\text{Var}(Y_i \mid Z_i)\big] + \text{Var}\!\big(\mathbb{E}(Y_i \mid Z_i)\big).
+$$
+
+For a Poisson random variable, $\text{Var}(Y_i \mid Z_i) = Z_i$ and $\mathbb{E}(Y_i \mid Z_i) = Z_i$. Substituting:
+
+$$
+\text{Var}(Y_i) = \mathbb{E}(Z_i) + \text{Var}(Z_i) = \alpha_i \nu_i + \alpha_i^2 \nu_i.
+$$
+
+$$
+\boxed{\text{Var}(Y_i) = \alpha_i \nu_i + \alpha_i^2 \nu_i.}
+$$
+
+Since $\alpha_i^2 \nu_i > 0$, we have $\text{Var}(Y_i) = \alpha_i \nu_i + \alpha_i^2 \nu_i > \alpha_i \nu_i = \mathbb{E}(Y_i)$, confirming **overdispersion**.
+
+#### Interpretation of the two terms
+
+-   **$\alpha_i \nu_i = \mathbb{E}(Z_i)$** corresponds to **technical noise**. This term equals $\mathbb{E}[\text{Var}(Y_i \mid Z_i)]$, i.e., the average Poisson variability given a fixed expression rate. It captures the stochasticity inherent in the sequencing process (amplification, reverse transcription, library preparation), which is modeled by the Poisson layer.
+
+-   **$\alpha_i^2 \nu_i = \text{Var}(Z_i)$** corresponds to **biological variability**. This term equals $\text{Var}(\mathbb{E}[Y_i \mid Z_i])$, i.e., the variance of the latent expression rate across samples. It reflects the sample-to-sample differences in true gene expression levels, which inflate the total variance beyond what a pure Poisson model would predict.
+
+### Part 2 (1 point)
+
+**Model A** assumes a shared known shape parameter $\nu_i = \nu$ for all samples. Since $\alpha_i \nu_i = \mu_i$, we have $\alpha_i = \mu_i / \nu$.
+
+By the hint, marginalizing over $Z_i$ yields the negative binomial distribution:
+
+$$
+P(Y_i = y) = \binom{y + \nu - 1}{y} \left(\frac{\mu_i}{\nu + \mu_i}\right)^y \left(\frac{\nu}{\nu + \mu_i}\right)^{\nu}.
+$$
+
+Taking the logarithm:
+
+$$
+\log P(Y_i = y) = \log\binom{y + \nu - 1}{y} + y \log\!\left(\frac{\mu_i}{\nu + \mu_i}\right) + \nu \log\!\left(\frac{\nu}{\nu + \mu_i}\right).
+$$
+
+#### Identifying the EDF form
+
+We define the **canonical parameter**:
+
+$$
+\theta = \log\!\left(\frac{\mu_i}{\nu + \mu_i}\right).
+$$
+
+From this, $e^\theta = \frac{\mu_i}{\nu + \mu_i}$ and $1 - e^\theta = \frac{\nu}{\nu + \mu_i}$. Solving for $\mu_i$:
+
+$$
+\mu_i = \frac{\nu e^\theta}{1 - e^\theta}.
+$$
+
+Substituting into the log-PMF:
+
+$$
+\log P(Y_i = y) = y\theta + \nu \log(1 - e^\theta) + \log\binom{y + \nu - 1}{y}.
+$$
+
+This can be written in the EDF form $\frac{y\theta - b(\theta)}{\phi} + c(y, \phi)$ with:
+
+$$
+\phi = 1, \qquad b(\theta) = -\nu \log(1 - e^\theta), \qquad c(y, \phi) = \log\binom{y + \nu - 1}{y}.
+$$
+
+Note that $c(y, \phi)$ depends only on $y$ and $\nu$ (which is a known constant, not a function of $\mu_i$), so it is independent of the mean parameter, confirming the EDF form.
+
+#### Deriving the variance function
+
+The mean is:
+
+$$
+\mu = b'(\theta) = -\nu \cdot \frac{-e^\theta}{1 - e^\theta} = \frac{\nu e^\theta}{1 - e^\theta}. \quad \checkmark
+$$
+
+The variance function is:
+
+$$
+V(\mu) = b''(\theta) = \nu \cdot \frac{d}{d\theta}\!\left(\frac{e^\theta}{1 - e^\theta}\right) = \nu \cdot \frac{e^\theta}{(1 - e^\theta)^2}.
+$$
+
+Substituting $e^\theta = \frac{\mu}{\nu + \mu}$ and $1 - e^\theta = \frac{\nu}{\nu + \mu}$:
+
+$$
+V(\mu) = \nu \cdot \frac{\mu / (\nu + \mu)}{\nu^2 / (\nu + \mu)^2} = \nu \cdot \frac{\mu(\nu + \mu)}{\nu^2} = \frac{\mu(\nu + \mu)}{\nu}.
+$$
+
+$$
+\boxed{V(\mu) = \mu + \frac{\mu^2}{\nu},}
+$$
+
+which is **quadratic in $\mu$**. The total variance is $\text{Var}(Y_i) = \phi \cdot V(\mu) = \mu + \mu^2/\nu$, consistent with Part 1 under $\nu_i = \nu$ and $\alpha_i = \mu_i/\nu$.
+
+### Part 3 (3 points)
+
+**Model B** assumes a shared known scale parameter $\alpha_i = \alpha$ for all samples. Since $\alpha_i \nu_i = \mu_i$, we have $\nu_i = \mu_i / \alpha$.
+
+#### Showing $V(\mu) = \mu$ with $\phi = 1 + \alpha$
+
+From Part 1, the marginal variance is:
+
+$$
+\text{Var}(Y_i) = \alpha_i \nu_i + \alpha_i^2 \nu_i.
+$$
+
+Substituting $\alpha_i = \alpha$ and $\nu_i = \mu_i / \alpha$:
+
+$$
+\text{Var}(Y_i) = \alpha \cdot \frac{\mu_i}{\alpha} + \alpha^2 \cdot \frac{\mu_i}{\alpha} = \mu_i + \alpha\mu_i = (1 + \alpha)\mu_i.
+$$
+
+Writing this in the form $\text{Var}(Y_i) = \phi \cdot V(\mu)$, we identify:
+
+$$
+\boxed{V(\mu) = \mu, \qquad \phi = 1 + \alpha,}
+$$
+
+so the total variance $\text{Var}(Y_i) = (1 + \alpha)\mu$ is **linear in $\mu$**.
+
+#### Showing $Y_i$ does not belong to the EDF
+
+Under Model B, the negative binomial PMF with $\alpha_i = \alpha$ and $\nu_i = \mu_i/\alpha$ is:
+
+$$
+P(Y_i = y) = \binom{y + \mu_i/\alpha - 1}{y} \left(\frac{\mu_i}{\mu_i/\alpha + \mu_i}\right)^y \left(\frac{\mu_i/\alpha}{\mu_i/\alpha + \mu_i}\right)^{\mu_i/\alpha}.
+$$
+
+Simplifying the probability terms using $\mu_i/\alpha + \mu_i = \mu_i(1 + \alpha)/\alpha$:
+
+$$
+\frac{\mu_i}{\mu_i(1+\alpha)/\alpha} = \frac{\alpha}{1+\alpha}, \qquad \frac{\mu_i/\alpha}{\mu_i(1+\alpha)/\alpha} = \frac{1}{1+\alpha}.
+$$
+
+Therefore:
+
+$$
+\log P(Y_i = y) = \log\binom{y + \mu_i/\alpha - 1}{y} + y\log\!\left(\frac{\alpha}{1+\alpha}\right) + \frac{\mu_i}{\alpha}\log\!\left(\frac{1}{1+\alpha}\right).
+$$
+
+For this to be in the EDF form $\frac{y\theta - b(\theta)}{\phi} + c(y, \phi)$, the function $c(y, \phi)$ must be independent of $\mu_i$ (and hence of $\theta$). However, the binomial coefficient $\binom{y + \mu_i/\alpha - 1}{y}$ depends on both $y$ and $\mu_i$. Expanding via the Gamma function:
+
+$$
+\log\binom{y + \mu_i/\alpha - 1}{y} = \log\Gamma\!\left(y + \frac{\mu_i}{\alpha}\right) - \log\Gamma(y + 1) - \log\Gamma\!\left(\frac{\mu_i}{\alpha}\right).
+$$
+
+The term $\log\Gamma(y + \mu_i/\alpha)$ couples $y$ and $\mu_i$ in a nonlinear way that **cannot** be decomposed as a sum of a function of $y$ alone and a function of $\mu_i$ alone. Therefore, there is no valid decomposition into $\frac{y\theta - b(\theta)}{\phi} + c(y, \phi)$ with $c$ independent of $\mu$, and the distribution **does not belong to the exponential dispersion family**.
+
+Note also that the second term $y\log(\alpha/(1+\alpha))$ is a constant (independent of $\mu_i$), meaning the canonical parameter $\theta$ would be constant — further confirming that the distribution cannot be parametrized in EDF form with $\mu$ as the mean.
+
+#### Quasi-likelihood
+
+Using the formula $Q_i(\mu_i; y_i) = \int_{y_i}^{\mu_i} \frac{y_i - t}{\phi \cdot V(t)}\, dt$ with $V(t) = t$ and $\phi = 1 + \alpha$:
+
+$$
+Q_i(\mu_i; y_i) = \frac{1}{1 + \alpha} \int_{y_i}^{\mu_i} \frac{y_i - t}{t}\, dt = \frac{1}{1 + \alpha} \int_{y_i}^{\mu_i} \left(\frac{y_i}{t} - 1\right) dt.
+$$
+
+Evaluating:
+
+$$
+Q_i(\mu_i; y_i) = \frac{1}{1 + \alpha} \Big[ y_i \log t - t \Big]_{y_i}^{\mu_i} = \frac{1}{1 + \alpha} \Big[ y_i \log\mu_i - \mu_i - y_i \log y_i + y_i \Big].
+$$
+
+$$
+\boxed{Q_i(\mu_i; y_i) = \frac{1}{1 + \alpha} \left[ y_i \log\!\left(\frac{\mu_i}{y_i}\right) - (\mu_i - y_i) \right].}
+$$
+
+This has the same functional form as the Poisson log-likelihood (up to the scaling factor $1/(1+\alpha)$), which is expected since the variance function $V(\mu) = \mu$ is the same as for the Poisson distribution.
+
+### Part 4 (3 points)
+
+Now both parameters are allowed to vary with $\mu_i$:
+
+$$
+\alpha_i = \gamma + \psi\mu_i, \qquad \nu_i^{-1} = \psi + \gamma\mu_i^{-1}.
+$$
+
+**Consistency check:** $\alpha_i \nu_i = (\gamma + \psi\mu_i) \cdot \frac{1}{\psi + \gamma/\mu_i} = (\gamma + \psi\mu_i) \cdot \frac{\mu_i}{\psi\mu_i + \gamma} = \mu_i.$ $\checkmark$
+
+**Special cases:** When $\psi = 0$: $\alpha_i = \gamma$ (constant) and $\nu_i = \mu_i/\gamma$, recovering Model B. When $\gamma = 0$: $\alpha_i = \psi\mu_i$ and $\nu_i = 1/\psi$ (constant), recovering Model A.
+
+#### Deriving the variance function
+
+From Part 1, $\text{Var}(Y_i) = \alpha_i \nu_i + \alpha_i^2 \nu_i = \mu_i + \alpha_i^2 \nu_i$.
+
+We compute $\alpha_i^2 \nu_i$. Since $\nu_i = \mu_i / \alpha_i = \mu_i / (\gamma + \psi\mu_i)$:
+
+$$
+\alpha_i^2 \nu_i = (\gamma + \psi\mu_i)^2 \cdot \frac{\mu_i}{\gamma + \psi\mu_i} = (\gamma + \psi\mu_i)\,\mu_i = \gamma\mu_i + \psi\mu_i^2.
+$$
+
+Therefore:
+
+$$
+\text{Var}(Y_i) = \mu_i + \gamma\mu_i + \psi\mu_i^2.
+$$
+
+With $\phi = 1$, the variance function is:
+
+$$
+\boxed{V(\mu) = \mu + \gamma\mu + \psi\mu^2.}
+$$
+
+This **interpolates** between the two special cases:
+
+-   $\psi = 0$: $V(\mu) = (1 + \gamma)\mu$, the **overdispersed Poisson** form (Model B with $\alpha = \gamma$).
+-   $\gamma = 0$: $V(\mu) = \mu + \psi\mu^2 = \mu + \mu^2/\nu$, the **negative binomial** form (Model A with $\nu = 1/\psi$).
+
+#### Showing $Y_i$ does not have the EDF form
+
+The negative binomial PMF with $\nu_i = \mu_i/(\gamma + \psi\mu_i)$ is:
+
+$$
+P(Y_i = y) = \binom{y + \nu_i - 1}{y} \left(\frac{\gamma + \psi\mu_i}{1 + \gamma + \psi\mu_i}\right)^y \left(\frac{1}{1 + \gamma + \psi\mu_i}\right)^{\nu_i},
+$$
+
+where we used $\mu_i/(\nu_i + \mu_i) = (\gamma + \psi\mu_i)/(1 + \gamma + \psi\mu_i)$ and $\nu_i/(\nu_i + \mu_i) = 1/(1 + \gamma + \psi\mu_i)$.
+
+The log-PMF is:
+
+$$
+\log P(Y_i = y) = \log\binom{y + \nu_i - 1}{y} + y\log\!\left(\frac{\gamma + \psi\mu_i}{1 + \gamma + \psi\mu_i}\right) + \nu_i \log\!\left(\frac{1}{1 + \gamma + \psi\mu_i}\right).
+$$
+
+Since $\nu_i = \mu_i/(\gamma + \psi\mu_i)$ depends on $\mu_i$, the binomial coefficient $\binom{y + \nu_i - 1}{y}$ contains $\log\Gamma(y + \nu_i)$, which couples $y$ and $\mu_i$ in a way that cannot be decomposed into $\frac{y\theta - b(\theta)}{\phi} + c(y, \phi)$ with $c$ independent of $\mu$. Therefore, the distribution **does not belong to the exponential dispersion family**.
+
+#### Quasi-likelihood
+
+Using $Q_i(\mu_i; y_i) = \int_{y_i}^{\mu_i} \frac{y_i - t}{V(t)}\,dt$ with $V(t) = t(1 + \gamma + \psi t)$:
+
+$$
+Q_i(\mu_i; y_i) = \int_{y_i}^{\mu_i} \frac{y_i - t}{t(1 + \gamma + \psi t)}\,dt.
+$$
+
+We perform a **partial fraction decomposition**. Writing:
+
+$$
+\frac{y_i - t}{t(1 + \gamma + \psi t)} = \frac{A}{t} + \frac{B}{1 + \gamma + \psi t},
+$$
+
+we require $y_i - t = A(1 + \gamma + \psi t) + Bt$. Setting $t = 0$: $A = \frac{y_i}{1 + \gamma}$. Setting $1 + \gamma + \psi t = 0$: $B = -\frac{1 + \gamma + \psi y_i}{1 + \gamma}$.
+
+**Verification:** $A(1+\gamma) + (A\psi + B)t = y_i + \left(\frac{y_i \psi}{1+\gamma} - \frac{1+\gamma+\psi y_i}{1+\gamma}\right)t = y_i - t.$ $\checkmark$
+
+Substituting and integrating:
+
+$$
+Q_i = \frac{y_i}{1+\gamma}\int_{y_i}^{\mu_i}\frac{dt}{t} \;-\; \frac{1+\gamma+\psi y_i}{1+\gamma}\int_{y_i}^{\mu_i}\frac{dt}{1+\gamma+\psi t}.
+$$
+
+The first integral is $\log(\mu_i/y_i)$. For the second, substituting $u = 1 + \gamma + \psi t$:
+
+$$
+\int_{y_i}^{\mu_i}\frac{dt}{1+\gamma+\psi t} = \frac{1}{\psi}\log\!\left(\frac{1+\gamma+\psi\mu_i}{1+\gamma+\psi y_i}\right).
+$$
+
+Therefore:
+
+$$
+\boxed{Q_i(\mu_i; y_i) = \frac{y_i}{1+\gamma}\,\log\!\left(\frac{\mu_i}{y_i}\right) - \frac{1+\gamma+\psi y_i}{\psi(1+\gamma)}\,\log\!\left(\frac{1+\gamma+\psi\mu_i}{1+\gamma+\psi y_i}\right).}
+$$
+
+**Verification of special cases:**
+
+-   **$\psi \to 0$ (overdispersed Poisson, Model B):** Using $\log(1 + x) \approx x$ for small $x$, the second term approaches $\frac{1+\gamma}{\psi(1+\gamma)} \cdot \frac{\psi(\mu_i - y_i)}{1+\gamma} = \frac{\mu_i - y_i}{1+\gamma}$, giving $Q_i = \frac{1}{1+\gamma}\left[y_i\log(\mu_i/y_i) - (\mu_i - y_i)\right]$, consistent with Part 3.
+
+-   **$\gamma = 0$ (negative binomial, Model A):** $Q_i = y_i\log(\mu_i/y_i) - \frac{1+\psi y_i}{\psi}\log\!\left(\frac{1+\psi\mu_i}{1+\psi y_i}\right)$, the negative binomial quasi-likelihood with $\nu = 1/\psi$.
