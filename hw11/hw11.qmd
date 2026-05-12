@@ -82,8 +82,9 @@ $$
 
 To compute the matrix derivative $\frac{\partial \ell}{\partial A}$, we use the standard matrix calculus identities:
 
--   $\frac{\partial}{\partial A} \text{tr}(A B) = B^\top$
--   $\frac{\partial}{\partial A} \text{tr}(A B A^\top) = A(B + B^\top)$
+-   $\text{tr}(A) = \text{tr}(A^{\top})$ (for the third term)
+-   $\frac{\partial}{\partial A} \text{tr}(A B) = B^\top$ (for the second and third terms)
+-   $\frac{\partial}{\partial A} \text{tr}(A B A^\top) = A(B + B^\top)$ (for the fourth term)
 
 Therefore:
 
@@ -163,9 +164,9 @@ Since $\alpha_i^2 \nu_i > 0$, we have $\text{Var}(Y_i) = \alpha_i \nu_i + \alpha
 
 #### Interpretation of the two terms
 
--   **$\alpha_i \nu_i = \mathbb{E}(Z_i)$** corresponds to technical noise. This term equals $\mathbb{E}[\text{Var}(Y_i \mid Z_i)]$, i.e., the average Poisson variability given a fixed expression rate. It captures the stochasticity inherent in the sequencing process (amplification, reverse transcription, library preparation), which is modeled by the Poisson layer.
+-   $\alpha_i \nu_i = \mathbb{E}(Z_i)$ corresponds to technical noise. This term equals $\mathbb{E}[\text{Var}(Y_i \mid Z_i)]$, i.e., the average Poisson variability given a fixed expression rate. It captures the stochasticity inherent in the sequencing process (amplification, reverse transcription, library preparation), which is modeled by the Poisson layer.
 
--   **$\alpha_i^2 \nu_i = \text{Var}(Z_i)$** corresponds to biological variability. This term equals $\text{Var}(\mathbb{E}[Y_i \mid Z_i])$, i.e., the variance of the latent expression rate across samples. It reflects the sample-to-sample differences in true gene expression levels, which inflate the total variance beyond what a pure Poisson model would predict.
+-   $\alpha_i^2 \nu_i = \text{Var}(Z_i)$ corresponds to biological variability. This term equals $\text{Var}(\mathbb{E}[Y_i \mid Z_i])$, i.e., the variance of the latent expression rate across samples. It reflects the sample-to-sample differences in true gene expression levels, which inflate the total variance beyond what a pure Poisson model would predict.
 
 ### Part 2 (1 point)
 
@@ -378,7 +379,7 @@ $$
 Q_i(\mu_i; y_i) = \int_{y_i}^{\mu_i} \frac{y_i - t}{t(1 + \gamma + \psi t)}\,dt.
 $$
 
-We perform a partial fraction decomposition. Writing:
+We perform a partial fraction decomposition to obtain Hint 2 in the instructions. Writing:
 
 $$
 \frac{y_i - t}{t(1 + \gamma + \psi t)} = \frac{A}{t} + \frac{B}{1 + \gamma + \psi t},
@@ -408,6 +409,6 @@ $$
 
 **Verification of special cases:**
 
--   **$\psi \to 0$ (overdispersed Poisson, Model B):** Using $\log(1 + x) \approx x$ for small $x$, the second term approaches $\frac{1+\gamma}{\psi(1+\gamma)} \cdot \frac{\psi(\mu_i - y_i)}{1+\gamma} = \frac{\mu_i - y_i}{1+\gamma}$, giving $Q_i = \frac{1}{1+\gamma}\left[y_i\log(\mu_i/y_i) - (\mu_i - y_i)\right]$, consistent with Part 3.
+-   $\psi \to 0$ (overdispersed Poisson, Model B): Using $\log(1 + x) \approx x$ for small $x$, the second term approaches $\frac{1+\gamma}{\psi(1+\gamma)} \cdot \frac{\psi(\mu_i - y_i)}{1+\gamma} = \frac{\mu_i - y_i}{1+\gamma}$, giving $Q_i = \frac{1}{1+\gamma}\left[y_i\log(\mu_i/y_i) - (\mu_i - y_i)\right]$, consistent with Part 3.
 
--   **$\gamma = 0$ (negative binomial, Model A):** $Q_i = y_i\log(\mu_i/y_i) - \frac{1+\psi y_i}{\psi}\log\!\left(\frac{1+\psi\mu_i}{1+\psi y_i}\right)$, the negative binomial quasi-likelihood with $\nu = 1/\psi$.
+-   $\gamma = 0$ (negative binomial, Model A): $Q_i = y_i\log(\mu_i/y_i) - \frac{1+\psi y_i}{\psi}\log\!\left(\frac{1+\psi\mu_i}{1+\psi y_i}\right)$, the negative binomial quasi-likelihood with $\nu = 1/\psi$.
