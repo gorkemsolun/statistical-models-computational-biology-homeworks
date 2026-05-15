@@ -1,0 +1,78 @@
+---
+title: "HW 12 tumor mutation tree likelihood"
+format: pdf
+---
+
+
+```{r}
+set.seed(42)
+```
+
+
+## (a)
+
+```{r}
+##' computes the likelihood of the input genotype matrix given a tree
+##' returns both the node-by-cell log likelihood, and the overall log likelihood
+##' after marginalizing over all cell attachment
+##' assume uniform attachment probabilities
+##' @param tree list with $root (integer node index) and $children
+##' (a list mapping each parent node index, as a string, to an integer vector
+##' of its children's indices,
+##' e.g. list(root=1L, children=list("1"=2L, "2"=c(3L,4L))))
+##' @param genotype_matrix mutation-by-cell binary matrix of observed genotypes
+##' @param alpha false positive rate
+##' @param beta false negative rate
+compute_log_lik <- function(tree, genotype_matrix, alpha, beta) {
+
+  num_mutations <- nrow(genotype_matrix)
+  num_cells <- ncol(genotype_matrix)
+
+  log_lik <- matrix(NA_real_, nrow = num_mutations, ncol = num_cells)
+
+  ### fill in your code ###
+  
+  
+  final_llik  <- ...
+    
+  ### your code ends ###
+
+  return(list(log_lik = log_lik, final_llik = final_llik))
+}
+
+```
+
+
+## (b)
+```{r}
+genotype_matrix <- as.matrix(read.table("cells.txt"))
+genotype_matrix
+```
+
+## (c)
+
+Use the following mutation trees
+```{r}
+tree1 <- list(
+  root     = 1L,
+  children = list(
+    "1" = 2L,
+    "2" = c(3L, 4L),
+    "4" = 5L
+  )
+)
+
+tree2 <- list(
+  root     = 1L,
+  children = list(
+    "1" = 2L,
+    "2" = c(3L, 4L, 5L)
+  )
+)
+```
+
+Report the log likelihood and plot a heatmap for each of the four cases, below.
+
+```{r}
+### your code here ###
+```
